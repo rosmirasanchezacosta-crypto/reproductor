@@ -7,23 +7,23 @@
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
 <style>
-html, body { margin: 0; padding: 0; background: black; height: 100%; overflow: hidden; font-family: sans-serif; }
-#player { position: relative; width: 100%; height: 100vh; background: black; }
-.video-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; }
-video, iframe { width: 100%; height: 100%; object-fit: contain; background: black; border: none; position: absolute; top: 0; left: 0; }
-#bloqueo-flecha { position: absolute; top: 0; right: 0; width: 180px; height: 60px; background: rgba(0,0,0,0); z-index: 1000; display: none; }
-.controls { position: absolute; bottom: 0; width: 100%; padding: 15px; box-sizing: border-box; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); opacity: 0; transition: 0.3s; z-index: 10; }
-#player:hover .controls { opacity: 1; }
-.btn { color: white !important; font-size: 18px; cursor: pointer; margin-right: 15px; text-shadow: 0 0 5px rgba(142, 68, 173, 0.8); outline: none; -webkit-tap-highlight-color: transparent; display: inline-block; user-select: none; transition: color 0.1s ease; }
-.btn:hover, .btn:focus, .btn:active { color: #bc13fe !important; text-shadow: 0 0 10px #bc13fe; }
-.progress { width: 100%; height: 6px; background: rgba(255,255,255,0.2); cursor: pointer; margin-bottom: 10px; border-radius: 3px; overflow: hidden; }
-.progress-bar { height: 100%; width: 0%; background: #8e44ad; box-shadow: 0 0 10px #bc13fe; transition: width 0.1s linear; }
-.center-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(1); width: 80px; height: 80px; border-radius: 50%; background: rgba(142, 68, 173, 0.3); border: 2px solid #bc13fe; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; z-index: 5; box-shadow: 0 0 20px rgba(188, 19, 254, 0.4); display: none; }
-.center-play::before { content: ''; margin-left: 5px; border-left: 25px solid white; border-top: 15px solid transparent; border-bottom: 15px solid transparent; }
-#overlay { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #000; z-index: 2000; }
-#btn-entrar { width: 100px; height: 100px; cursor: pointer; background: #8e44ad; color: white; border: none; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: transform 0.2s, background 0.3s; box-shadow: 0 0 20px rgba(142, 68, 173, 0.6); }
-.play-icon { width: 0; height: 0; border-top: 20px solid transparent; border-bottom: 20px solid transparent; border-left: 35px solid white; margin-left: 8px; }
-#timer { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; z-index: 2010; display: none; }
+    html, body { margin: 0; padding: 0; background: black; height: 100%; overflow: hidden; font-family: sans-serif; }
+    #player { position: relative; width: 100%; height: 100vh; background: black; }
+    .video-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; }
+    video, iframe { width: 100%; height: 100%; object-fit: contain; background: black; border: none; position: absolute; top: 0; left: 0; }
+    #bloqueo-flecha { position: absolute; top: 0; right: 0; width: 180px; height: 60px; background: rgba(0,0,0,0); z-index: 1000; display: none; }
+    .controls { position: absolute; bottom: 0; width: 100%; padding: 15px; box-sizing: border-box; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); opacity: 0; transition: 0.3s; z-index: 10; }
+    #player:hover .controls { opacity: 1; }
+    .btn { color: white !important; font-size: 18px; cursor: pointer; margin-right: 15px; text-shadow: 0 0 5px rgba(142, 68, 173, 0.8); outline: none; -webkit-tap-highlight-color: transparent; display: inline-block; user-select: none; transition: color 0.1s ease; }
+    .btn:hover, .btn:focus, .btn:active { color: #bc13fe !important; text-shadow: 0 0 10px #bc13fe; }
+    .progress { width: 100%; height: 6px; background: rgba(255,255,255,0.2); cursor: pointer; margin-bottom: 10px; border-radius: 3px; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: #8e44ad; box-shadow: 0 0 10px #bc13fe; transition: width 0.1s linear; }
+    .center-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(1); width: 80px; height: 80px; border-radius: 50%; background: rgba(142, 68, 173, 0.3); border: 2px solid #bc13fe; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; z-index: 5; box-shadow: 0 0 20px rgba(188, 19, 254, 0.4); display: none; }
+    .center-play::before { content: ''; margin-left: 5px; border-left: 25px solid white; border-top: 15px solid transparent; border-bottom: 15px solid transparent; }
+    #overlay { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #000; z-index: 2000; }
+    #btn-entrar { width: 100px; height: 100px; cursor: pointer; background: #8e44ad; color: white; border: none; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: transform 0.2s, background 0.3s; box-shadow: 0 0 20px rgba(142, 68, 173, 0.6); }
+    .play-icon { width: 0; height: 0; border-top: 20px solid transparent; border-bottom: 20px solid transparent; border-left: 35px solid white; margin-left: 8px; }
+    #timer { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; z-index: 2010; display: none; }
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -35,85 +35,89 @@ video, iframe { width: 100%; height: 100%; object-fit: contain; background: blac
     <video id="video" style="display: none;" playsinline muted loop></video>
     <div id="centerPlay" class="center-play"></div>
 
- <div class="controls" id="custom-controls" style="display: none;">
-    <div class="progress" id="progress"><div class="progress-bar" id="bar"></div></div>
-    <div style="color: white; font-size: 12px; margin-bottom: 5px;">
-        <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
+    <div class="controls" id="custom-controls" style="display: none;">
+        <div class="progress" id="progress"><div class="progress-bar" id="bar"></div></div>
+        <div style="color: white; font-size: 12px; margin-bottom: 8px; display: flex; gap: 5px;">
+            <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
+        </div>
+        <span class="btn" id="playBtn">▶</span><span class="btn" id="muteBtn">🔊</span><span class="btn" id="fullscreenBtn">⛶</span>
     </div>
-    <span class="btn" id="playBtn">▶</span><span class="btn" id="muteBtn">🔊</span><span class="btn" id="fullscreenBtn">⛶</span>
- </div>
 </div>
 
 <script>
-// --- SCRIPT CORREGIDO ---
-const video = document.getElementById("video"), 
-      playBtn = document.getElementById("playBtn"), 
-      muteBtn = document.getElementById("muteBtn"), 
-      fullscreenBtn = document.getElementById("fullscreenBtn"), 
-      centerPlay = document.getElementById("centerPlay"), 
-      progress = document.getElementById("progress"), 
-      bar = document.getElementById("bar"), 
-      capaControles = document.getElementById("custom-controls"), 
-      wrapperExterno = document.getElementById('wrapper-externo'), 
-      iframe = document.getElementById('videoFrame'), 
-      timerDiv = document.getElementById('timer'), 
-      segSpan = document.getElementById('seg'), 
-      overlay = document.getElementById('overlay'), 
-      bloqueoFlecha = document.getElementById('bloqueo-flecha'),
-      currentTimeDisplay = document.getElementById("currentTime"),
-      totalTimeDisplay = document.getElementById("totalTime");
+    const video = document.getElementById("video"), playBtn = document.getElementById("playBtn"), muteBtn = document.getElementById("muteBtn"), fullscreenBtn = document.getElementById("fullscreenBtn"), centerPlay = document.getElementById("centerPlay"), progress = document.getElementById("progress"), bar = document.getElementById("bar"), capaControles = document.getElementById("custom-controls"), wrapperExterno = document.getElementById('wrapper-externo'), iframe = document.getElementById('videoFrame'), timerDiv = document.getElementById('timer'), segSpan = document.getElementById('seg'), overlay = document.getElementById('overlay'), bloqueoFlecha = document.getElementById('bloqueo-flecha');
+    const currentTimeDisplay = document.getElementById("currentTime"), totalTimeDisplay = document.getElementById("totalTime");
+    
+    // Configuración de video
+    const params = new URLSearchParams(window.location.search + window.location.hash.replace('#', '&'));
+    let videoUrl = params.get("video"), adUrl = params.get("ad");
 
-// ... (aquí mantén tus funciones tipo() y ejecutarContenidoReal() igual que las tienes) ...
-
-// Función de formato de tiempo
-function formatTime(s) {
-    if (isNaN(s)) return "0:00";
-    let m = Math.floor(s / 60);
-    let sec = Math.floor(s % 60);
-    return m + ":" + (sec < 10 ? "0" : "") + sec;
-}
-
-// Función Toggle Play
-function togglePlay() { 
-    if (video.paused) { 
-        video.play(); 
-        playBtn.innerText = "⏸"; 
-        centerPlay.style.display = "none"; 
-    } else { 
-        video.pause(); 
-        playBtn.innerText = "▶"; 
-        centerPlay.style.display = "flex"; 
-    } 
-}
-
-// Eventos de Clic
-document.getElementById("player").addEventListener("click", (e) => {
-    if(e.target.id === "player" || e.target.id === "video" || e.target.id === "centerPlay") {
-        togglePlay();
+    function tipo(u) {
+        if (!u) return "vacio";
+        let uLower = u.toLowerCase();
+        if (uLower.includes("drive.google.com")) return "drive";
+        if (uLower.includes(".m3u8")) return "hls";
+        if (uLower.includes(".mpd")) return "dash";
+        if (uLower.includes(".mp4") || uLower.includes("/releases/download/")) return "mp4_puro";
+        return "embed";
     }
-});
+    const tipoContenido = tipo(videoUrl);
 
-playBtn.onclick = togglePlay; 
-centerPlay.onclick = togglePlay;
-muteBtn.onclick = () => { video.muted = !video.muted; muteBtn.innerText = video.muted ? "🔇" : "🔊"; };
-fullscreenBtn.onclick = () => { if (!document.fullscreenElement) document.getElementById("player").requestFullscreen(); else document.exitFullscreen(); };
-progress.onclick = (e) => { const rect = progress.getBoundingClientRect(); video.currentTime = ((e.clientX - rect.left) / rect.width) * video.duration; };
+    function ejecutarContenidoReal() {
+        wrapperExterno.style.display = 'none'; video.style.display = 'none'; capaControles.style.display = 'none'; centerPlay.style.display = 'none';
+        if (tipoContenido === "drive") {
+            wrapperExterno.style.display = 'block'; iframe.removeAttribute('sandbox'); bloqueoFlecha.style.display = 'block';
+            if (videoUrl.includes("/view")) videoUrl = videoUrl.replace("/view", "/preview");
+            iframe.src = videoUrl + (videoUrl.includes("?") ? "&" : "?") + "autoplay=1";
+        } else if (tipoContenido === "mp4_puro") {
+            video.style.display = 'block'; capaControles.style.display = 'block'; centerPlay.style.display = 'flex'; video.src = videoUrl; video.play().catch(() => {});
+        } else if (tipoContenido === "hls") {
+            video.style.display = 'block'; capaControles.style.display = 'block'; centerPlay.style.display = 'flex';
+            if (Hls.isSupported()) { const hls = new Hls(); hls.loadSource(videoUrl); hls.attachMedia(video); hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play(); }); } else if (video.canPlayType('application/vnd.apple.mpegurl')) { video.src = videoUrl; video.play(); }
+        } else if (tipoContenido === "dash") {
+            video.style.display = 'block'; capaControles.style.display = 'block'; centerPlay.style.display = 'flex'; dashjs.MediaPlayer().create().initialize(video, videoUrl, true);
+        } else {
+            wrapperExterno.style.display = 'block'; iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-same-origin'); iframe.src = videoUrl;
+        }
+    }
 
-// Eventos de estado de video
-video.onplay = () => { centerPlay.style.display = "none"; playBtn.innerText = "⏸"; };
-video.onpause = () => { centerPlay.style.display = "flex"; playBtn.innerText = "▶"; };
+    document.getElementById('btn-entrar').onclick = () => {
+        overlay.style.display = 'none';
+        if (!videoUrl) return;
+        if (adUrl) {
+            wrapperExterno.style.display = 'block'; iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-same-origin'); iframe.src = adUrl.includes('?') ? adUrl + '&autoplay=1' : adUrl + '?autoplay=1';
+            timerDiv.style.display = 'block'; let timeLeft = 21;
+            const countdown = setInterval(() => { timeLeft--; segSpan.innerText = timeLeft; if (timeLeft <= 0) { clearInterval(countdown); timerDiv.style.display = 'none'; ejecutarContenidoReal(); } }, 1000);
+        } else { ejecutarContenidoReal(); }
+    };
 
-// Evento ÚNICO de actualización de tiempo
-video.ontimeupdate = () => {
-    // Barra
-    bar.style.width = (video.currentTime / video.duration) * 100 + "%";
-    // Tiempos
-    currentTimeDisplay.innerText = formatTime(video.currentTime);
-    totalTimeDisplay.innerText = formatTime(video.duration);
-};
+    function formatTime(s) {
+        if (isNaN(s)) return "0:00";
+        let m = Math.floor(s / 60);
+        let sec = Math.floor(s % 60);
+        return m + ":" + (sec < 10 ? "0" : "") + sec;
+    }
 
-if (video.muted) muteBtn.innerText = "🔇";
+    function togglePlay() { 
+        if (video.paused) { video.play(); playBtn.innerText = "⏸"; centerPlay.style.display = "none"; } 
+        else { video.pause(); playBtn.innerText = "▶"; centerPlay.style.display = "flex"; } 
+    }
+
+    playBtn.onclick = togglePlay; 
+    centerPlay.onclick = togglePlay;
+    video.onplay = () => { centerPlay.style.display = "none"; playBtn.innerText = "⏸"; };
+    video.onpause = () => { centerPlay.style.display = "flex"; playBtn.innerText = "▶"; };
+    muteBtn.onclick = () => { video.muted = !video.muted; muteBtn.innerText = video.muted ? "🔇" : "🔊"; };
+    fullscreenBtn.onclick = () => { if (!document.fullscreenElement) document.getElementById("player").requestFullscreen(); else document.exitFullscreen(); };
+    progress.onclick = (e) => { const rect = progress.getBoundingClientRect(); video.currentTime = ((e.clientX - rect.left) / rect.width) * video.duration; };
+
+    video.ontimeupdate = () => {
+        bar.style.width = (video.currentTime / video.duration) * 100 + "%";
+        currentTimeDisplay.innerText = formatTime(video.currentTime);
+        totalTimeDisplay.innerText = formatTime(video.duration);
+    };
+
+    if (video.muted) muteBtn.innerText = "🔇";
 </script>
 </body>
 </html>
-```[cite: 2]
