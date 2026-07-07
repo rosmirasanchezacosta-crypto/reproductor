@@ -45,94 +45,74 @@ video, iframe { width: 100%; height: 100%; object-fit: contain; background: blac
 </div>
 
 <script>
-const video = document.getElementById("video"), playBtn = document.getElementById("playBtn"), muteBtn = document.getElementById("muteBtn"), fullscreenBtn = document.getElementById("fullscreenBtn"), centerPlay = document.getElementById("centerPlay"), progress = document.getElementById("progress"), bar = document.getElementById("bar"), capaControles = document.getElementById("custom-controls"), wrapperExterno = document.getElementById('wrapper-externo'), iframe = document.getElementById('videoFrame'), timerDiv = document.getElementById('timer'), segSpan = document.getElementById('seg'), overlay = document.getElementById('overlay'), bloqueoFlecha = document.getElementById('bloqueo-flecha');
-const params = new URLSearchParams(window.location.search + window.location.hash.replace('#', '&'));
-let videoUrl = params.get("video"), adUrl = params.get("ad");
+// --- SCRIPT CORREGIDO ---
+const video = document.getElementById("video"), 
+      playBtn = document.getElementById("playBtn"), 
+      muteBtn = document.getElementById("muteBtn"), 
+      fullscreenBtn = document.getElementById("fullscreenBtn"), 
+      centerPlay = document.getElementById("centerPlay"), 
+      progress = document.getElementById("progress"), 
+      bar = document.getElementById("bar"), 
+      capaControles = document.getElementById("custom-controls"), 
+      wrapperExterno = document.getElementById('wrapper-externo'), 
+      iframe = document.getElementById('videoFrame'), 
+      timerDiv = document.getElementById('timer'), 
+      segSpan = document.getElementById('seg'), 
+      overlay = document.getElementById('overlay'), 
+      bloqueoFlecha = document.getElementById('bloqueo-flecha'),
+      currentTimeDisplay = document.getElementById("currentTime"),
+      totalTimeDisplay = document.getElementById("totalTime");
 
-function tipo(u) {
-    if (!u) return "vacio";
-    let uLower = u.toLowerCase();
-    if (uLower.includes("drive.google.com")) return "drive";
-    if (uLower.includes(".m3u8")) return "hls";
-    if (uLower.includes(".mpd")) return "dash";
-    if (uLower.includes(".mp4") || uLower.includes("/releases/download/")) return "mp4_puro";
-    return "embed";
-}
-const tipoContenido = tipo(videoUrl);
+// ... (aquí mantén tus funciones tipo() y ejecutarContenidoReal() igual que las tienes) ...
 
-function ejecutarContenidoReal() {
-    wrapperExterno.style.display = 'none'; video.style.display = 'none'; capaControles.style.display = 'none'; centerPlay.style.display = 'none';
-    if (tipoContenido === "drive") {
-        wrapperExterno.style.display = 'block'; iframe.removeAttribute('sandbox'); bloqueoFlecha.style.display = 'block';
-        if (videoUrl.includes("/view")) videoUrl = videoUrl.replace("/view", "/preview");
-        iframe.src = videoUrl + (videoUrl.includes("?") ? "&" : "?") + "autoplay=1";
-    } else if (tipoContenido === "mp4_puro") {
-        video.style.display = 'block'; capaControles.style.display = 'block'; centerPlay.style.display = 'flex'; video.src = videoUrl; video.play().catch(() => {});
-    } else if (tipoContenido === "hls") {
-        video.style.display = 'block'; capaControles.style.display = 'block'; centerPlay.style.display = 'flex';
-        if (Hls.isSupported()) { const hls = new Hls(); hls.loadSource(videoUrl); hls.attachMedia(video); hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play(); }); } else if (video.canPlayType('application/vnd.apple.mpegurl')) { video.src = videoUrl; video.play(); }
-    } else if (tipoContenido === "dash") {
-        video.style.display = 'block'; capaControles.style.display = 'block'; centerPlay.style.display = 'flex'; dashjs.MediaPlayer().create().initialize(video, videoUrl, true);
-    } else {
-        wrapperExterno.style.display = 'block'; iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-same-origin'); iframe.src = videoUrl;
-    }
-}
-
-document.getElementById('btn-entrar').onclick = () => {
-    overlay.style.display = 'none';
-    if (!videoUrl) return;
-    if (adUrl) {
-        wrapperExterno.style.display = 'block'; iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-same-origin'); iframe.src = adUrl.includes('?') ? adUrl + '&autoplay=1' : adUrl + '?autoplay=1';
-        timerDiv.style.display = 'block'; let timeLeft = 21;
-        const countdown = setInterval(() => { timeLeft--; segSpan.innerText = timeLeft; if (timeLeft <= 0) { clearInterval(countdown); timerDiv.style.display = 'none'; ejecutarContenidoReal(); } }, 1000);
-    } else { ejecutarContenidoReal(); }
-};
-const currentTimeDisplay = document.getElementById("currentTime");
-const totalTimeDisplay = document.getElementById("totalTime");
-// Referencias nuevas
-const currentTimeDisplay = document.getElementById("currentTime");
-const totalTimeDisplay = document.getElementById("totalTime");
-
-// 1. Función para pausar/reproducir al hacer clic en el video (o en el player)
-document.getElementById("player").addEventListener("click", (e) => {
-    // Evitamos que pause si hacen clic en los botones de control
-    if(e.target.id === "player" || e.target.id === "video" || e.target.id === "centerPlay") {
-        togglePlay();
-    }
-});
-
-// 2. Función para formatear el tiempo (MM:SS)
+// Función de formato de tiempo
 function formatTime(s) {
+    if (isNaN(s)) return "0:00";
     let m = Math.floor(s / 60);
     let sec = Math.floor(s % 60);
     return m + ":" + (sec < 10 ? "0" : "") + sec;
 }
 
-// 3. Actualización en el evento ontimeupdate existente
-video.ontimeupdate = () => {
-    // Barra de progreso
-    bar.style.width = (video.currentTime / video.duration) * 100 + "%";
-    
-    // Tiempo transcurrido
-    currentTimeDisplay.innerText = formatTime(video.currentTime);
-    
-    // Tiempo restante (duración total - actual)
-    if(video.duration) {
-        totalTimeDisplay.innerText = formatTime(video.duration);
+// Función Toggle Play
+function togglePlay() { 
+    if (video.paused) { 
+        video.play(); 
+        playBtn.innerText = "⏸"; 
+        centerPlay.style.display = "none"; 
+    } else { 
+        video.pause(); 
+        playBtn.innerText = "▶"; 
+        centerPlay.style.display = "flex"; 
+    } 
+}
+
+// Eventos de Clic
+document.getElementById("player").addEventListener("click", (e) => {
+    if(e.target.id === "player" || e.target.id === "video" || e.target.id === "centerPlay") {
+        togglePlay();
     }
-};
-function togglePlay() { if (video.paused) { video.play(); playBtn.innerText = "⏸"; centerPlay.style.display = "none"; } else { video.pause(); playBtn.innerText = "▶"; centerPlay.style.display = "flex"; } }
-playBtn.onclick = togglePlay; centerPlay.onclick = togglePlay;
-video.onplay = () => { centerPlay.style.display = "none"; playBtn.innerText = "⏸"; };
-video.onpause = () => { centerPlay.style.display = "flex"; playBtn.innerText = "▶"; };
+});
+
+playBtn.onclick = togglePlay; 
+centerPlay.onclick = togglePlay;
 muteBtn.onclick = () => { video.muted = !video.muted; muteBtn.innerText = video.muted ? "🔇" : "🔊"; };
 fullscreenBtn.onclick = () => { if (!document.fullscreenElement) document.getElementById("player").requestFullscreen(); else document.exitFullscreen(); };
-video.ontimeupdate = () => { bar.style.width = (video.currentTime / video.duration) * 100 + "%"; };
 progress.onclick = (e) => { const rect = progress.getBoundingClientRect(); video.currentTime = ((e.clientX - rect.left) / rect.width) * video.duration; };
 
-if (video.muted) {
-    muteBtn.innerText = "🔇";
-}
+// Eventos de estado de video
+video.onplay = () => { centerPlay.style.display = "none"; playBtn.innerText = "⏸"; };
+video.onpause = () => { centerPlay.style.display = "flex"; playBtn.innerText = "▶"; };
+
+// Evento ÚNICO de actualización de tiempo
+video.ontimeupdate = () => {
+    // Barra
+    bar.style.width = (video.currentTime / video.duration) * 100 + "%";
+    // Tiempos
+    currentTimeDisplay.innerText = formatTime(video.currentTime);
+    totalTimeDisplay.innerText = formatTime(video.duration);
+};
+
+if (video.muted) muteBtn.innerText = "🔇";
 </script>
 </body>
 </html>
