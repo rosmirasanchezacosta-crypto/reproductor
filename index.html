@@ -32,16 +32,29 @@ video, iframe { width: 100%; height: 100%; object-fit: contain; background: blac
     <div id="overlay"><button id="btn-entrar"><div class="play-icon"></div></button></div>
     <div id="timer">Publicidad: <span id="seg">21</span>s</div>
     <div class="video-wrapper" id="wrapper-externo"><div id="bloqueo-flecha"></div><iframe id="videoFrame" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe></div>
-    <video id="video" style="display: none;" playsinline muted loop></video>
+    <video id="video" style="display: none;" playsinline></video>
     <div id="centerPlay" class="center-play"></div>
+
     <div class="controls" id="custom-controls" style="display: none;">
         <div class="progress" id="progress"><div class="progress-bar" id="bar"></div></div>
-        <span class="btn" id="playBtn">▶</span><span class="btn" id="muteBtn">🔊</span><span class="btn" id="fullscreenBtn">⛶</span>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; color: white; margin-top: 5px;">
+            <div style="display: flex; align-items: center;">
+                <span class="btn" id="playBtn">▶</span>
+                <span class="btn" id="muteBtn">🔊</span>
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1" style="width: 70px; cursor: pointer;">
+            </div>
+            <div style="display: flex; align-items: center;">
+                <span style="font-size: 14px; margin-right: 15px;"><span id="currentTime">0:00</span> / <span id="totalTime">0:00</span></span>
+                <span class="btn" id="fullscreenBtn">⛶</span>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-const video = document.getElementById("video"), playBtn = document.getElementById("playBtn"), muteBtn = document.getElementById("muteBtn"), fullscreenBtn = document.getElementById("fullscreenBtn"), centerPlay = document.getElementById("centerPlay"), progress = document.getElementById("progress"), bar = document.getElementById("bar"), capaControles = document.getElementById("custom-controls"), wrapperExterno = document.getElementById('wrapper-externo'), iframe = document.getElementById('videoFrame'), timerDiv = document.getElementById('timer'), segSpan = document.getElementById('seg'), overlay = document.getElementById('overlay'), bloqueoFlecha = document.getElementById('bloqueo-flecha');
+const video = document.getElementById("video"), playBtn = document.getElementById("playBtn"), muteBtn = document.getElementById("muteBtn"), fullscreenBtn = document.getElementById("fullscreenBtn"), centerPlay = document.getElementById("centerPlay"), progress = document.getElementById("progress"), bar = document.getElementById("bar"), capaControles = document.getElementById("custom-controls"), wrapperExterno = document.getElementById('wrapper-externo'), iframe = document.getElementById('videoFrame'), timerDiv = document.getElementById('timer'), segSpan = document.getElementById('seg'), overlay = document.getElementById('overlay'), bloqueoFlecha = document.getElementById('bloqueo-flecha'), volumeSlider = document.getElementById("volumeSlider"), currentTimeDisplay = document.getElementById("currentTime"), totalTimeDisplay = document.getElementById("totalTime");
+
 const params = new URLSearchParams(window.location.search + window.location.hash.replace('#', '&'));
 let videoUrl = params.get("video"), adUrl = params.get("ad");
 
@@ -84,19 +97,33 @@ document.getElementById('btn-entrar').onclick = () => {
     } else { ejecutarContenidoReal(); }
 };
 
+function formatTime(s) {
+    if (isNaN(s)) return "0:00";
+    let m = Math.floor(s / 60);
+    let sec = Math.floor(s % 60);
+    return m + ":" + (sec < 10 ? "0" : "") + sec;
+}
+
 function togglePlay() { if (video.paused) { video.play(); playBtn.innerText = "⏸"; centerPlay.style.display = "none"; } else { video.pause(); playBtn.innerText = "▶"; centerPlay.style.display = "flex"; } }
 playBtn.onclick = togglePlay; centerPlay.onclick = togglePlay;
+
 video.onplay = () => { centerPlay.style.display = "none"; playBtn.innerText = "⏸"; };
 video.onpause = () => { centerPlay.style.display = "flex"; playBtn.innerText = "▶"; };
+
 muteBtn.onclick = () => { video.muted = !video.muted; muteBtn.innerText = video.muted ? "🔇" : "🔊"; };
+volumeSlider.oninput = (e) => { video.volume = e.target.value; video.muted = (video.volume === 0); muteBtn.innerText = (video.volume === 0) ? "🔇" : "🔊"; };
+
 fullscreenBtn.onclick = () => { if (!document.fullscreenElement) document.getElementById("player").requestFullscreen(); else document.exitFullscreen(); };
-video.ontimeupdate = () => { bar.style.width = (video.currentTime / video.duration) * 100 + "%"; };
+
+video.ontimeupdate = () => { 
+    bar.style.width = (video.currentTime / video.duration) * 100 + "%"; 
+    currentTimeDisplay.innerText = formatTime(video.currentTime);
+    totalTimeDisplay.innerText = formatTime(video.duration);
+};
+
 progress.onclick = (e) => { const rect = progress.getBoundingClientRect(); video.currentTime = ((e.clientX - rect.left) / rect.width) * video.duration; };
 
-if (video.muted) {
-    muteBtn.innerText = "🔇";
-}
+if (video.muted) muteBtn.innerText = "🔇";
 </script>
 </body>
 </html>
-```[cite: 2]
