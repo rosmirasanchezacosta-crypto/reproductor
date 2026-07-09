@@ -14,15 +14,43 @@ video, iframe { width: 100%; height: 100%; object-fit: contain; background: blac
 #bloqueo-flecha { position: absolute; top: 0; right: 0; width: 180px; height: 60px; background: rgba(0,0,0,0); z-index: 1000; display: none; }
 .controls { position: absolute; bottom: 0; width: 100%; padding: 15px; box-sizing: border-box; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); opacity: 0; transition: 0.3s; z-index: 10; }
 #player:hover .controls { opacity: 1; }
-.btn { color: white !important; font-size: 18px; cursor: pointer; margin-right: 15px; text-shadow: 0 0 5px rgba(142, 68, 173, 0.8); outline: none; -webkit-tap-highlight-color: transparent; display: inline-block; user-select: none; transition: color 0.1s ease; }
+.btn { 
+color: white !important; 
+font-size: 15px; 
+cursor: pointer; 
+margin-right: 15px; text-shadow: 0 0 5px rgba(142, 68, 173, 0.8); 
+outline: none; -webkit-tap-highlight-color: transparent; 
+display: inline-block; 
+user-select: none; 
+transition: color 0.1s ease; 
+}
 .btn:hover, .btn:focus, .btn:active { color: #bc13fe !important; text-shadow: 0 0 10px #bc13fe; }
 .progress { width: 100%; height: 6px; background: rgba(255,255,255,0.2); cursor: pointer; margin-bottom: 10px; border-radius: 3px; overflow: hidden; }
 .progress-bar { height: 100%; width: 0%; background: #8e44ad; box-shadow: 0 0 10px #bc13fe; transition: width 0.1s linear; }
 .center-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(1); width: 80px; height: 80px; border-radius: 50%; background: rgba(142, 68, 173, 0.3); border: 2px solid #bc13fe; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; z-index: 5; box-shadow: 0 0 20px rgba(188, 19, 254, 0.4); display: none; }
 .center-play::before { content: ''; margin-left: 5px; border-left: 25px solid white; border-top: 15px solid transparent; border-bottom: 15px solid transparent; }
 #overlay { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #000; z-index: 2000; }
-#btn-entrar { width: 100px; height: 100px; cursor: pointer; background: #8e44ad; color: white; border: none; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: transform 0.2s, background 0.3s; box-shadow: 0 0 20px rgba(142, 68, 173, 0.6); }
-.play-icon { width: 0; height: 0; border-top: 20px solid transparent; border-bottom: 20px solid transparent; border-left: 35px solid white; margin-left: 8px; }
+#btn-entrar { 
+width: 80px; 
+height: 80px; 
+cursor: pointer; 
+background: #8e44ad; 
+color: white; 
+border: none; 
+border-radius: 50%; display: flex; 
+justify-content: center; 
+align-items: center; 
+transition: transform 0.2s, background 0.3s; 
+box-shadow: 0 0 20px rgba(142, 68, 173, 0.6); 
+}
+.play-icon { 
+width: 0; 
+height: 0; 
+border-top: 20px solid transparent; 
+border-bottom: 20px solid transparent; 
+border-left: 35px solid white; 
+margin-left: 8px; 
+}
 #timer { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; z-index: 2010; display: none; }
 </style>
 </head>
@@ -127,3 +155,21 @@ if (video.muted) muteBtn.innerText = "🔇";
 </script>
 </body>
 </html>
+    // 3. LIMPIEZA
+    newtext = newtext.replace(/\[stt\/(.*?)]/gi, '')
+                     .replace(/\[sc\/(.*?)]/gi, '')
+                     .replace(/\[dl\/(.*?)]/gi, '')
+                     .replace(/\[\+\]/gi, '');
+
+    // 4. TRAILER Y LINKS NORMALES (Estos SI procesan el ";" porque son los que deben hacerlo)
+    newtext = newtext.replace(/\[([^\]]+)\;(https?:\/\/[^\]]+)\*\]/gi, '<a href="$2" class="active" title="$1" target="black"><i class="fa fa-youtube-play"></i> $1</a>');
+    newtext = newtext.replace(/\[([^\;\]]+)\;([^\]]+)\]/gi, '<a href="$2" title="$1">$1</a>');
+
+    // 5. COMPLEMENTOS
+    newtext = newtext.replace(/\[ss\]/gi, '<div class="season-item"><p>Ver Trailer</p><div class="playlist-item">')
+                     .replace(/\[\/ss\]/gi, '</div></div>');
+    newtext = newtext.replace(/\[chuyen@(.*?)\]/gi, '<meta http-equiv="refresh" content="5;url=$1"/>');
+    newtext = newtext.replace(/\[br\/(.*?)]/gi, '<p class="newsv"># $1</p><div class="playlst">');
+
+    jQuery(this).html(newtext);
+});
