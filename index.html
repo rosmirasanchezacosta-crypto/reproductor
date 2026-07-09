@@ -155,21 +155,4 @@ if (video.muted) muteBtn.innerText = "🔇";
 </script>
 </body>
 </html>
-    // 3. LIMPIEZA
-    newtext = newtext.replace(/\[stt\/(.*?)]/gi, '')
-                     .replace(/\[sc\/(.*?)]/gi, '')
-                     .replace(/\[dl\/(.*?)]/gi, '')
-                     .replace(/\[\+\]/gi, '');
-
-    // 4. TRAILER Y LINKS NORMALES (Estos SI procesan el ";" porque son los que deben hacerlo)
-    newtext = newtext.replace(/\[([^\]]+)\;(https?:\/\/[^\]]+)\*\]/gi, '<a href="$2" class="active" title="$1" target="black"><i class="fa fa-youtube-play"></i> $1</a>');
-    newtext = newtext.replace(/\[([^\;\]]+)\;([^\]]+)\]/gi, '<a href="$2" title="$1">$1</a>');
-
-    // 5. COMPLEMENTOS
-    newtext = newtext.replace(/\[ss\]/gi, '<div class="season-item"><p>Ver Trailer</p><div class="playlist-item">')
-                     .replace(/\[\/ss\]/gi, '</div></div>');
-    newtext = newtext.replace(/\[chuyen@(.*?)\]/gi, '<meta http-equiv="refresh" content="5;url=$1"/>');
-    newtext = newtext.replace(/\[br\/(.*?)]/gi, '<p class="newsv"># $1</p><div class="playlst">');
-
-    jQuery(this).html(newtext);
-});
+   
