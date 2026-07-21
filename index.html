@@ -244,16 +244,11 @@ video, iframe {
     border: none;
 }
 
-/* Settings / Configuración */
-.settings-container {
-    position: relative;
-    display: inline-block;
-    margin-right: 15px;
-}
-.settings-menu {
+/* Settings / Configuración — MENÚ INDEPENDIENTE de la barra de controles */
+.settings-menu-standalone {
     position: absolute;
-    bottom: calc(100% + 12px);
-    right: 0;
+    bottom: 55px;
+    right: 15px;
     background: rgba(0, 0, 0, 0.9);
     border: 1px solid rgba(188, 19, 254, 0.4);
     border-radius: 10px;
@@ -264,9 +259,10 @@ video, iframe {
     font-size: 13px;
     backdrop-filter: blur(6px);
     box-shadow: 0 0 20px rgba(188, 19, 254, 0.2);
-    z-index: 20;
+    z-index: 30;
+    pointer-events: auto;
 }
-.settings-container.active .settings-menu {
+.settings-menu-standalone.active {
     display: block;
 }
 .settings-item {
@@ -366,26 +362,26 @@ input:checked + .slider-switch:before {
             </div>
             <div style="display: flex; align-items: center;">
                 <span style="font-size: 10px; margin-right: 15px;"><span id="currentTime">0:00</span> / <span id="totalTime">0:00</span></span>
-                <div class="settings-container" id="settingsContainer">
-                    <span class="btn" id="settingsBtn" style="margin-right: 0;">⚙</span>
-                    <div class="settings-menu" id="settingsMenu">
-                        <div class="settings-item">
-                            <span>Subtítulos</span>
-                            <label class="switch">
-                                <input type="checkbox" id="subtitleToggle">
-                                <span class="slider-switch"></span>
-                            </label>
-                        </div>
-                        <div class="settings-item">
-                            <span>Idioma</span>
-                            <select id="languageSelect">
-                                <option value="">Por defecto</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
+                <span class="btn" id="settingsBtn" style="margin-right: 15px;">⚙</span>
                 <span class="btn" id="fullscreenBtn">⛶</span>
             </div>
+        </div>
+    </div>
+
+    <!-- Menú de ajustes FUERA de .controls para evitar que el auto-hide lo congele -->
+    <div class="settings-menu-standalone" id="settingsMenu">
+        <div class="settings-item">
+            <span>Subtítulos</span>
+            <label class="switch">
+                <input type="checkbox" id="subtitleToggle">
+                <span class="slider-switch"></span>
+            </label>
+        </div>
+        <div class="settings-item">
+            <span>Idioma</span>
+            <select id="languageSelect">
+                <option value="">Por defecto</option>
+            </select>
         </div>
     </div>
 </div>
@@ -411,7 +407,6 @@ const video = document.getElementById("video"),
       volumeContainer = document.getElementById("volumeContainer"),
       settingsBtn = document.getElementById("settingsBtn"),
       settingsMenu = document.getElementById("settingsMenu"),
-      settingsContainer = document.getElementById("settingsContainer"),
       subtitleToggle = document.getElementById("subtitleToggle"),
       languageSelect = document.getElementById("languageSelect"),
       player = document.getElementById("player"),
@@ -536,13 +531,15 @@ subtitleToggle.onchange = () => {
     }
 };
 
-settingsBtn.onclick = () => {
-    settingsContainer.classList.toggle("active");
+settingsBtn.onclick = (e) => {
+    e.stopPropagation();
+    settingsMenu.classList.toggle("active");
+    showAllControls();
 };
 
 document.addEventListener("click", (e) => {
-    if (!settingsContainer.contains(e.target)) {
-        settingsContainer.classList.remove("active");
+    if (!settingsBtn.contains(e.target) && !settingsMenu.contains(e.target)) {
+        settingsMenu.classList.remove("active");
     }
 });
 
@@ -721,21 +718,17 @@ if (video.muted) muteBtn.innerText = "🔇";
 let hideControlsTimeout;
 let mouseOverControls = false;
 let mouseOverVolume = false;
-let mouseOverSettings = false;
+let mouseOverSettingsMenu = false;
 let mouseOverCenter = false;
 
 capaControles.addEventListener('mouseenter', () => mouseOverControls = true);
 capaControles.addEventListener('mouseleave', () => mouseOverControls = false);
 volumeContainer.addEventListener('mouseenter', () => mouseOverVolume = true);
 volumeContainer.addEventListener('mouseleave', () => mouseOverVolume = false);
-settingsContainer.addEventListener('mouseenter', () => mouseOverSettings = true);
-settingsContainer.addEventListener('mouseleave', () => mouseOverSettings = false);
+settingsMenu.addEventListener('mouseenter', () => mouseOverSettingsMenu = true);
+settingsMenu.addEventListener('mouseleave', () => mouseOverSettingsMenu = false);
 centerPlay.addEventListener('mouseenter', () => mouseOverCenter = true);
 centerPlay.addEventListener('mouseleave', () => mouseOverCenter = false);
-settingsMenu.addEventListener('mouseenter', () => mouseOverSettings = true);
-settingsMenu.addEventListener('mouseleave', () => mouseOverSettings = false);
-document.querySelector('.volume-slider-wrapper').addEventListener('mouseenter', () => mouseOverVolume = true);
-document.querySelector('.volume-slider-wrapper').addEventListener('mouseleave', () => mouseOverVolume = false);
 
 function showAllControls() {
     capaControles.classList.add("show");
@@ -744,7 +737,7 @@ function showAllControls() {
     }
     clearTimeout(hideControlsTimeout);
     hideControlsTimeout = setTimeout(() => {
-        if (!mouseOverControls && !mouseOverVolume && !mouseOverSettings && !mouseOverCenter && !settingsContainer.classList.contains('active')) {
+        if (!mouseOverControls && !mouseOverVolume && !mouseOverSettingsMenu && !mouseOverCenter && !settingsMenu.classList.contains('active')) {
             capaControles.classList.remove("show");
             centerPlay.classList.remove("visible");
         } else {
