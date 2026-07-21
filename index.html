@@ -435,6 +435,7 @@ function updateAudioTracks() {
     languageSelect.innerHTML = '<option value="">Por defecto</option>';
     let hasTracks = false;
     
+    // HLS
     if (window.hlsPlayer && window.hlsPlayer.audioTracks && window.hlsPlayer.audioTracks.length > 0) {
         window.hlsPlayer.audioTracks.forEach((track, index) => {
             const opt = document.createElement("option");
@@ -443,7 +444,24 @@ function updateAudioTracks() {
             languageSelect.appendChild(opt);
             hasTracks = true;
         });
-    } else if (video.audioTracks && video.audioTracks.length > 0) {
+    }
+    // DASH
+    else if (window.dashPlayer && typeof window.dashPlayer.getTracksFor === 'function') {
+        try {
+            const audioTracks = window.dashPlayer.getTracksFor('audio');
+            if (audioTracks && audioTracks.length > 0) {
+                audioTracks.forEach((track, index) => {
+                    const opt = document.createElement("option");
+                    opt.value = "dash_" + index;
+                    opt.text = track.lang || (track.labels ? track.labels.join(', ') : '') || `Pista ${index + 1}`;
+                    languageSelect.appendChild(opt);
+                    hasTracks = true;
+                });
+            }
+        } catch(e) {}
+    }
+    // Native video audio tracks
+    else if (video.audioTracks && video.audioTracks.length > 0) {
         for (let i = 0; i < video.audioTracks.length; i++) {
             const opt = document.createElement("option");
             opt.value = "native_" + i;
@@ -453,17 +471,24 @@ function updateAudioTracks() {
         }
     }
     
-    if (!hasTracks) {
-        languageSelect.innerHTML = '<option value="">Por defecto</option>';
-    }
+    languageSelect.disabled = !hasTracks;
+}
+
+function hasSubtitles() {
+    if (video.textTracks && video.textTracks.length > 0) return true;
+    if (window.hlsPlayer && window.hlsPlayer.subtitleTracks && window.hlsPlayer.subtitleTracks.length > 0) return true;
+    return false;
 }
 
 function updateSubtitleAvailability() {
     const subtitleItem = subtitleToggle.closest('.settings-item');
-    if (video.textTracks && video.textTracks.length > 0) {
-        subtitleItem.style.display = 'flex';
+    subtitleItem.style.display = 'flex';
+    if (hasSubtitles()) {
+        subtitleToggle.disabled = false;
+        subtitleItem.style.opacity = '1';
     } else {
-        subtitleItem.style.display = 'none';
+        subtitleToggle.disabled = true;
+        subtitleItem.style.opacity = '0.4';
     }
 }
 
@@ -474,6 +499,16 @@ languageSelect.onchange = () => {
     if (val.startsWith("hls_")) {
         const idx = parseInt(val.replace("hls_", ""));
         if (window.hlsPlayer) window.hlsPlayer.audioTrack = idx;
+    } else if (val.startsWith("dash_")) {
+        const idx = parseInt(val.replace("dash_", ""));
+        if (window.dashPlayer && typeof window.dashPlayer.setCurrentTrack === 'function') {
+            try {
+                const audioTracks = window.dashPlayer.getTracksFor('audio');
+                if (audioTracks && audioTracks[idx]) {
+                    window.dashPlayer.setCurrentTrack(audioTracks[idx]);
+                }
+            } catch(e) {}
+        }
     } else if (val.startsWith("native_")) {
         const idx = parseInt(val.replace("native_", ""));
         if (video.audioTracks && video.audioTracks[idx]) {
@@ -485,9 +520,18 @@ languageSelect.onchange = () => {
 };
 
 subtitleToggle.onchange = () => {
-    if (video.textTracks) {
+    // Native text tracks
+    if (video.textTracks && video.textTracks.length > 0) {
         for (let i = 0; i < video.textTracks.length; i++) {
             video.textTracks[i].mode = subtitleToggle.checked ? "showing" : "hidden";
+        }
+    }
+    // HLS subtitle tracks
+    if (window.hlsPlayer && window.hlsPlayer.subtitleTracks) {
+        if (subtitleToggle.checked) {
+            window.hlsPlayer.subtitleTrack = 0;
+        } else {
+            window.hlsPlayer.subtitleTrack = -1;
         }
     }
 };
@@ -535,6 +579,7 @@ function ejecutarContenidoReal() {
                 updateSubtitleAvailability();
             });
             window.hlsPlayer.on(Hls.Events.AUDIO_TRACKS_UPDATED, updateAudioTracks);
+            window.hlsPlayer.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, updateSubtitleAvailability);
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) { 
             video.src = videoUrl; 
             video.play(); 
@@ -545,7 +590,11 @@ function ejecutarContenidoReal() {
         centerPlay.classList.add("visible"); 
         window.dashPlayer = dashjs.MediaPlayer().create(); 
         window.dashPlayer.initialize(video, videoUrl, true);
-        setTimeout(() => { updateAudioTracks(); updateSubtitleAvailability(); }, 500);
+        window.dashPlayer.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, () => {
+            updateAudioTracks();
+            updateSubtitleAvailability();
+        });
+        setTimeout(() => { updateAudioTracks(); updateSubtitleAvailability(); }, 1000);
     } else {
         wrapperExterno.style.display = 'block'; 
         iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-same-origin'); 
@@ -557,6 +606,10 @@ function ejecutarContenidoReal() {
             updateAudioTracks();
             updateSubtitleAvailability();
         };
+        video.addEventListener('loadeddata', () => {
+            updateAudioTracks();
+            updateSubtitleAvailability();
+        });
     }
     
     if (tipoContenido === "mp4_puro" || tipoContenido === "hls" || tipoContenido === "dash") {
