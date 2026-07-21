@@ -614,12 +614,12 @@ function togglePlay() {
     if (video.paused) { 
         video.play(); 
         playBtn.innerText = "⏸"; 
-        playBtn.classList.remove("paused-frame");
+        playBtn.classList.add("paused-frame");
         centerPlay.classList.remove("visible"); 
     } else { 
         video.pause(); 
         playBtn.innerText = "▶"; 
-        playBtn.classList.add("paused-frame");
+        playBtn.classList.remove("paused-frame");
         centerPlay.classList.add("visible"); 
     } 
 }
@@ -629,12 +629,12 @@ centerPlay.onclick = togglePlay;
 video.onplay = () => { 
     centerPlay.classList.remove("visible"); 
     playBtn.innerText = "⏸"; 
-    playBtn.classList.remove("paused-frame");
+    playBtn.classList.add("paused-frame");
 };
 video.onpause = () => { 
     centerPlay.classList.add("visible"); 
     playBtn.innerText = "▶"; 
-    playBtn.classList.add("paused-frame");
+    playBtn.classList.remove("paused-frame");
 };
 
 muteBtn.onclick = () => { 
