@@ -536,8 +536,7 @@ subtitleToggle.onchange = () => {
     }
 };
 
-settingsBtn.onclick = (e) => {
-    e.stopPropagation();
+settingsBtn.onclick = () => {
     settingsContainer.classList.toggle("active");
 };
 
@@ -733,6 +732,10 @@ settingsContainer.addEventListener('mouseenter', () => mouseOverSettings = true)
 settingsContainer.addEventListener('mouseleave', () => mouseOverSettings = false);
 centerPlay.addEventListener('mouseenter', () => mouseOverCenter = true);
 centerPlay.addEventListener('mouseleave', () => mouseOverCenter = false);
+settingsMenu.addEventListener('mouseenter', () => mouseOverSettings = true);
+settingsMenu.addEventListener('mouseleave', () => mouseOverSettings = false);
+document.querySelector('.volume-slider-wrapper').addEventListener('mouseenter', () => mouseOverVolume = true);
+document.querySelector('.volume-slider-wrapper').addEventListener('mouseleave', () => mouseOverVolume = false);
 
 function showAllControls() {
     capaControles.classList.add("show");
@@ -741,7 +744,7 @@ function showAllControls() {
     }
     clearTimeout(hideControlsTimeout);
     hideControlsTimeout = setTimeout(() => {
-        if (!mouseOverControls && !mouseOverVolume && !mouseOverSettings && !mouseOverCenter) {
+        if (!mouseOverControls && !mouseOverVolume && !mouseOverSettings && !mouseOverCenter && !settingsContainer.classList.contains('active')) {
             capaControles.classList.remove("show");
             centerPlay.classList.remove("visible");
         } else {
