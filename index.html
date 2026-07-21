@@ -619,7 +619,7 @@ function togglePlay() {
     } else { 
         video.pause(); 
         playBtn.innerText = "▶"; 
-        playBtn.classList.remove("paused-frame");
+        playBtn.classList.add("paused-frame");
         centerPlay.classList.add("visible"); 
     } 
 }
@@ -634,7 +634,7 @@ video.onplay = () => {
 video.onpause = () => { 
     centerPlay.classList.add("visible"); 
     playBtn.innerText = "▶"; 
-    playBtn.classList.remove("paused-frame");
+    playBtn.classList.add("paused-frame");
 };
 
 muteBtn.onclick = () => { 
