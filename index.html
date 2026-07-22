@@ -84,112 +84,622 @@ video, iframe {
 }
 .btn.paused-frame {
     border: 1px solid rgba(188, 19, 254, 0.7);
-    box-shadow: 0 0 10px rgba(188, 19, 254, 0.6);
+    box-shadow: 0 0 12px rgba(188, 19, 254, 0.45), inset 0 0 8px rgba(188, 19, 254, 0.15);
+    border-radius: 8px;
+    padding: 3px 8px;
+    background: rgba(142, 68, 173, 0.12);
+}
+.progress { 
+    width: 100%; 
+    height: 6px; 
+    background: rgba(255,255,255,0.2); 
+    cursor: pointer; 
+    margin-bottom: 10px; 
+    border-radius: 3px; 
+    overflow: hidden; 
+}
+.progress-bar { 
+    height: 100%; 
+    width: 0%; 
+    background: #8e44ad; 
+    box-shadow: 0 0 10px #bc13fe; 
+    transition: width 0.1s linear; 
+}
+.center-play { 
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%) scale(1); 
+    width: 80px; 
+    height: 80px; 
+    border-radius: 50%; 
+    background: rgba(142, 68, 173, 0.35); 
+    border: 2px solid #bc13fe; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    cursor: pointer; 
+    transition: 0.3s; 
+    z-index: 5; 
+    box-shadow: 0 0 25px rgba(188, 19, 254, 0.5), inset 0 0 20px rgba(188, 19, 254, 0.1);
+    opacity: 0;
+    pointer-events: none;
+}
+.center-play.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+.center-play:hover {
+    background: rgba(142, 68, 173, 0.55);
+    box-shadow: 0 0 35px rgba(188, 19, 254, 0.7), inset 0 0 30px rgba(188, 19, 254, 0.2);
+    transform: translate(-50%, -50%) scale(1.1);
+}
+.center-play::before { 
+    content: ''; 
+    margin-left: 5px; 
+    border-left: 25px solid white; 
+    border-top: 15px solid transparent; 
+    border-bottom: 15px solid transparent; 
+}
+#overlay { 
+    position: absolute; 
+    width: 100%; 
+    height: 100%; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    background: #000; 
+    z-index: 2000; 
+}
+#btn-entrar { 
+    width: 80px; 
+    height: 80px; 
+    cursor: pointer; 
+    background: #8e44ad; 
+    color: white; 
+    border: none; 
+    border-radius: 50%; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    transition: transform 0.2s, background 0.3s; 
+    box-shadow: 0 0 20px rgba(142, 68, 173, 0.6); 
+}
+.play-icon { 
+    width: 0; 
+    height: 0; 
+    border-top: 20px solid transparent; 
+    border-bottom: 20px solid transparent; 
+    border-left: 35px solid white; 
+    margin-left: 8px; 
+}
+#timer { 
+    position: absolute; 
+    top: 20px; 
+    right: 20px; 
+    background: rgba(0,0,0,0.8); 
+    color: white; 
+    padding: 10px; 
+    border-radius: 5px; 
+    z-index: 2010; 
+    display: none; 
+}
+
+/* Volumen integrado vertical */
+.volume-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-right: 15px;
+}
+.volume-slider-wrapper {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 34px;
+    height: 100px;
+    background: rgba(0, 0, 0, 0.75);
+    border-radius: 18px;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid rgba(188, 19, 254, 0.35);
+    box-shadow: 0 0 15px rgba(188, 19, 254, 0.2);
+    backdrop-filter: blur(4px);
+    z-index: 20;
+}
+.volume-container:hover .volume-slider-wrapper,
+.volume-container.active .volume-slider-wrapper {
+    display: flex;
+}
+#volumeSlider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 4px;
+    background: rgba(188, 19, 254, 0.35);
+    border-radius: 2px;
+    outline: none;
+    transform: rotate(-90deg);
+    cursor: pointer;
+}
+#volumeSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: #bc13fe;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(188, 19, 254, 0.9);
+}
+#volumeSlider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: #bc13fe;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(188, 19, 254, 0.9);
+    border: none;
+}
+
+/* Settings / Configuración */
+.settings-container {
+    position: relative;
+    display: inline-block;
+    margin-right: 15px;
+}
+.settings-menu {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    right: 0;
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(188, 19, 254, 0.4);
+    border-radius: 10px;
+    padding: 12px;
+    min-width: 190px;
+    display: none;
+    color: white;
+    font-size: 13px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 0 20px rgba(188, 19, 254, 0.2);
+    z-index: 20;
+}
+.settings-container.active .settings-menu {
+    display: block;
+}
+.settings-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.settings-item:last-child {
+    border-bottom: none;
+}
+.settings-item span {
+    margin-right: 15px;
+    white-space: nowrap;
+}
+.settings-item select {
+    background: rgba(188, 19, 254, 0.15);
+    color: white;
+    border: 1px solid rgba(188, 19, 254, 0.5);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+}
+.settings-item select option {
+    background: #1a1a1a;
+    color: white;
+}
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 20px;
+}
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider-switch {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255,255,255,0.2);
+    transition: .3s;
+    border-radius: 20px;
+}
+.slider-switch:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+input:checked + .slider-switch {
+    background-color: #bc13fe;
+    box-shadow: 0 0 8px rgba(188, 19, 254, 0.6);
+}
+input:checked + .slider-switch:before {
+    transform: translateX(18px);
 }
 </style>
 </head>
+<body oncontextmenu="return false">
 
-<body>
 <div id="player">
+    <div id="overlay"><button id="btn-entrar"><div class="play-icon"></div></button></div>
+    <div id="timer">Publicidad: <span id="seg">21</span>s</div>
+    <button id="skipBtn" style="display: none; position: absolute; bottom: 80px; right: 20px; z-index: 2020; padding: 10px 20px; background: #8e44ad; color: white; border: none; cursor: pointer;">
+        Saltar Publicidad ⏭
+    </button>
+    <div class="video-wrapper" id="wrapper-externo"><div id="bloqueo-flecha"></div><iframe id="videoFrame" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe></div>
+    <video id="video" style="display: none;" playsinline></video>
+    <div id="centerPlay" class="center-play"></div>
 
-<div class="video-wrapper" id="videoWrapper">
-<video id="video" playsinline></video>
-</div>
-
-<div id="bloqueo-flecha"></div>
-
-<div class="controls" id="controls">
-<span class="btn" id="playPause">▶️</span>
-<span class="btn" id="rewind">⏪</span>
-<span class="btn" id="forward">⏩</span>
-<span class="btn" id="mute">🔊</span>
-<span class="btn" id="subtitles">CC</span>
-<span class="btn" id="fullscreen">⛶</span>
-</div>
-
+    <div class="controls" id="custom-controls" style="display: none;">
+        <div class="progress" id="progress"><div class="progress-bar" id="bar"></div></div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; color: white; margin-top: 5px;">
+            <div style="display: flex; align-items: center;">
+                <span class="btn" id="playBtn">▶</span>
+                <div class="volume-container" id="volumeContainer">
+                    <span class="btn" id="muteBtn" style="margin-right: 0;">🔊</span>
+                    <div class="volume-slider-wrapper">
+                        <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1">
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <span style="font-size: 10px; margin-right: 15px;"><span id="currentTime">0:00</span> / <span id="totalTime">0:00</span></span>
+                <div class="settings-container" id="settingsContainer">
+                    <span class="btn" id="settingsBtn" style="margin-right: 0;">⚙</span>
+                    <div class="settings-menu" id="settingsMenu">
+                        <div class="settings-item">
+                            <span>Subtítulos</span>
+                            <label class="switch">
+                                <input type="checkbox" id="subtitleToggle">
+                                <span class="slider-switch"></span>
+                            </label>
+                        </div>
+                        <div class="settings-item">
+                            <span>Idioma</span>
+                            <select id="languageSelect">
+                                <option value="">Por defecto</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <span class="btn" id="fullscreenBtn">⛶</span>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-const video = document.getElementById("video");
-const wrapper = document.getElementById("videoWrapper");
+const video = document.getElementById("video"), 
+      playBtn = document.getElementById("playBtn"), 
+      muteBtn = document.getElementById("muteBtn"), 
+      fullscreenBtn = document.getElementById("fullscreenBtn"), 
+      centerPlay = document.getElementById("centerPlay"), 
+      progress = document.getElementById("progress"), 
+      bar = document.getElementById("bar"), 
+      capaControles = document.getElementById("custom-controls"), 
+      wrapperExterno = document.getElementById('wrapper-externo'), 
+      iframe = document.getElementById('videoFrame'), 
+      timerDiv = document.getElementById('timer'), 
+      segSpan = document.getElementById('seg'), 
+      overlay = document.getElementById('overlay'), 
+      bloqueoFlecha = document.getElementById('bloqueo-flecha'), 
+      volumeSlider = document.getElementById("volumeSlider"), 
+      currentTimeDisplay = document.getElementById("currentTime"), 
+      totalTimeDisplay = document.getElementById("totalTime"),
+      volumeContainer = document.getElementById("volumeContainer"),
+      settingsBtn = document.getElementById("settingsBtn"),
+      settingsMenu = document.getElementById("settingsMenu"),
+      settingsContainer = document.getElementById("settingsContainer"),
+      subtitleToggle = document.getElementById("subtitleToggle"),
+      languageSelect = document.getElementById("languageSelect"),
+      player = document.getElementById("player"),
+      skipBtn = document.getElementById("skipBtn");
 
-const controls = document.getElementById("controls");
-const playPause = document.getElementById("playPause");
-const rewind = document.getElementById("rewind");
-const forward = document.getElementById("forward");
-const mute = document.getElementById("mute");
-const subtitles = document.getElementById("subtitles");
-const fullscreen = document.getElementById("fullscreen");
+const params = new URLSearchParams(window.location.search + window.location.hash.replace('#', '&'));
+let videoUrl = params.get("video"), adUrl = params.get("ad");
 
-let controlsTimeout;
+function tipo(u) {
+    if (!u) return "vacio";
+    let uLower = u.toLowerCase();
+    if (uLower.includes("drive.google.com")) return "drive";
+    if (uLower.includes(".m3u8")) return "hls";
+    if (uLower.includes(".mpd")) return "dash";
+    if (uLower.includes(".mp4") || uLower.includes("/releases/download/")) return "mp4_puro";
+    return "embed";
+}
+const tipoContenido = tipo(videoUrl);
 
-// Mostrar controles
-function showControls() {
-    controls.classList.add("show");
-    clearTimeout(controlsTimeout);
-    controlsTimeout = setTimeout(() => {
-        controls.classList.remove("show");
+function updateAudioTracks() {
+    languageSelect.innerHTML = '<option value="">Por defecto</option>';
+    let hasTracks = false;
+    
+    if (window.hlsPlayer && window.hlsPlayer.audioTracks && window.hlsPlayer.audioTracks.length > 0) {
+        window.hlsPlayer.audioTracks.forEach((track, index) => {
+            const opt = document.createElement("option");
+            opt.value = "hls_" + index;
+            opt.text = track.name || track.lang || `Pista ${index + 1}`;
+            languageSelect.appendChild(opt);
+            hasTracks = true;
+        });
+    } else if (video.audioTracks && video.audioTracks.length > 0) {
+        for (let i = 0; i < video.audioTracks.length; i++) {
+            const opt = document.createElement("option");
+            opt.value = "native_" + i;
+            opt.text = video.audioTracks[i].label || video.audioTracks[i].language || `Pista ${i + 1}`;
+            languageSelect.appendChild(opt);
+            hasTracks = true;
+        }
+    }
+    
+    if (!hasTracks) {
+        languageSelect.innerHTML = '<option value="">Por defecto</option>';
+    }
+}
+
+function updateSubtitleAvailability() {
+    const subtitleItem = subtitleToggle.closest('.settings-item');
+    if (video.textTracks && video.textTracks.length > 0) {
+        subtitleItem.style.display = 'flex';
+    } else {
+        subtitleItem.style.display = 'none';
+    }
+}
+
+languageSelect.onchange = () => {
+    const val = languageSelect.value;
+    if (!val) return;
+    
+    if (val.startsWith("hls_")) {
+        const idx = parseInt(val.replace("hls_", ""));
+        if (window.hlsPlayer) window.hlsPlayer.audioTrack = idx;
+    } else if (val.startsWith("native_")) {
+        const idx = parseInt(val.replace("native_", ""));
+        if (video.audioTracks && video.audioTracks[idx]) {
+            for (let i = 0; i < video.audioTracks.length; i++) {
+                video.audioTracks[i].enabled = (i === idx);
+            }
+        }
+    }
+};
+
+subtitleToggle.onchange = () => {
+    if (video.textTracks) {
+        for (let i = 0; i < video.textTracks.length; i++) {
+            video.textTracks[i].mode = subtitleToggle.checked ? "showing" : "hidden";
+        }
+    }
+};
+
+settingsBtn.onclick = (e) => {
+    e.stopPropagation();
+    settingsContainer.classList.toggle("active");
+};
+
+document.addEventListener("click", (e) => {
+    if (!settingsContainer.contains(e.target)) {
+        settingsContainer.classList.remove("active");
+    }
+});
+
+function ejecutarContenidoReal() {
+    wrapperExterno.style.display = 'none'; 
+    video.style.display = 'none'; 
+    capaControles.style.display = 'none'; 
+    centerPlay.classList.remove("visible");
+    
+    if (tipoContenido === "drive") {
+        wrapperExterno.style.display = 'block'; 
+        iframe.removeAttribute('sandbox'); 
+        bloqueoFlecha.style.display = 'block';
+        if (videoUrl.includes("/view")) videoUrl = videoUrl.replace("/view", "/preview");
+        iframe.src = videoUrl + (videoUrl.includes("?") ? "&" : "?") + "autoplay=1";
+    } else if (tipoContenido === "mp4_puro") {
+        video.style.display = 'block'; 
+        capaControles.style.display = 'block'; 
+        centerPlay.classList.add("visible"); 
+        video.src = videoUrl; 
+        video.play().catch(() => {});
+    } else if (tipoContenido === "hls") {
+        video.style.display = 'block'; 
+        capaControles.style.display = 'block'; 
+        centerPlay.classList.add("visible");
+        if (Hls.isSupported()) { 
+            window.hlsPlayer = new Hls(); 
+            window.hlsPlayer.loadSource(videoUrl); 
+            window.hlsPlayer.attachMedia(video); 
+            window.hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => { 
+                video.play(); 
+                updateAudioTracks();
+                updateSubtitleAvailability();
+            });
+            window.hlsPlayer.on(Hls.Events.AUDIO_TRACKS_UPDATED, updateAudioTracks);
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) { 
+            video.src = videoUrl; 
+            video.play(); 
+        }
+    } else if (tipoContenido === "dash") {
+        video.style.display = 'block'; 
+        capaControles.style.display = 'block'; 
+        centerPlay.classList.add("visible"); 
+        window.dashPlayer = dashjs.MediaPlayer().create(); 
+        window.dashPlayer.initialize(video, videoUrl, true);
+        setTimeout(() => { updateAudioTracks(); updateSubtitleAvailability(); }, 500);
+    } else {
+        wrapperExterno.style.display = 'block'; 
+        iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-same-origin'); 
+        iframe.src = videoUrl;
+    }
+    
+    if (tipoContenido !== "drive" && tipoContenido !== "embed" && tipoContenido !== "vacio") {
+        video.onloadedmetadata = () => {
+            updateAudioTracks();
+            updateSubtitleAvailability();
+        };
+    }
+    
+    if (tipoContenido === "mp4_puro" || tipoContenido === "hls" || tipoContenido === "dash") {
+        showAllControls();
+    }
+}
+
+document.getElementById('btn-entrar').onclick = () => {
+    overlay.style.display = 'none';
+    if (!videoUrl) return;
+
+    if (adUrl) {
+        wrapperExterno.style.display = 'block'; 
+        iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-same-origin'); 
+        iframe.src = adUrl.includes('?') ? adUrl + '&autoplay=1' : adUrl + '?autoplay=1';
+        
+        timerDiv.style.display = 'block'; 
+        let timeLeft = 21;
+        
+        const countdown = setInterval(() => {
+            timeLeft--;
+            segSpan.innerText = timeLeft;
+            
+            if (timeLeft <= 16) { 
+                skipBtn.style.display = 'block';
+            }
+            
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                timerDiv.style.display = 'none';
+                skipBtn.style.display = 'none';
+                ejecutarContenidoReal();
+            }
+        }, 1000);
+
+        skipBtn.onclick = () => {
+            clearInterval(countdown); 
+            timerDiv.style.display = 'none';
+            skipBtn.style.display = 'none';
+            ejecutarContenidoReal();
+        };
+    } else { 
+        ejecutarContenidoReal(); 
+    }
+};
+
+function formatTime(s) {
+    if (isNaN(s)) return "0:00";
+    let m = Math.floor(s / 60);
+    let sec = Math.floor(s % 60);
+    return m + ":" + (sec < 10 ? "0" : "") + sec;
+}
+
+function togglePlay() { 
+    if (video.paused) { 
+        video.play(); 
+        playBtn.innerText = "⏸"; 
+        playBtn.classList.add("paused-frame");
+        centerPlay.classList.remove("visible"); 
+    } else { 
+        video.pause(); 
+        playBtn.innerText = "▶"; 
+        playBtn.classList.add("paused-frame");
+        centerPlay.classList.add("visible"); 
+    } 
+}
+playBtn.onclick = togglePlay; 
+centerPlay.onclick = togglePlay;
+
+video.onplay = () => { 
+    centerPlay.classList.remove("visible"); 
+    playBtn.innerText = "⏸"; 
+    playBtn.classList.add("paused-frame");
+};
+video.onpause = () => { 
+    centerPlay.classList.add("visible"); 
+    playBtn.innerText = "▶"; 
+    playBtn.classList.add("paused-frame");
+};
+
+muteBtn.onclick = () => { 
+    video.muted = !video.muted; 
+    muteBtn.innerText = video.muted ? "🔇" : "🔊"; 
+};
+volumeSlider.oninput = (e) => { 
+    video.volume = e.target.value; 
+    video.muted = (parseFloat(e.target.value) === 0); 
+    muteBtn.innerText = (parseFloat(e.target.value) === 0) ? "🔇" : "🔊"; 
+};
+
+fullscreenBtn.onclick = () => { 
+    if (!document.fullscreenElement) document.getElementById("player").requestFullscreen(); 
+    else document.exitFullscreen(); 
+};
+
+video.ontimeupdate = () => { 
+    bar.style.width = (video.currentTime / video.duration) * 100 + "%"; 
+    currentTimeDisplay.innerText = formatTime(video.currentTime);
+    totalTimeDisplay.innerText = formatTime(video.duration);
+};
+
+progress.onclick = (e) => { 
+    const rect = progress.getBoundingClientRect(); 
+    video.currentTime = ((e.clientX - rect.left) / rect.width) * video.duration; 
+};
+
+if (video.muted) muteBtn.innerText = "🔇";
+
+// Auto-hide controles después de 3 segundos
+let hideControlsTimeout;
+let mouseOverControls = false;
+let mouseOverVolume = false;
+let mouseOverSettings = false;
+let mouseOverCenter = false;
+
+capaControles.addEventListener('mouseenter', () => mouseOverControls = true);
+capaControles.addEventListener('mouseleave', () => mouseOverControls = false);
+volumeContainer.addEventListener('mouseenter', () => mouseOverVolume = true);
+volumeContainer.addEventListener('mouseleave', () => mouseOverVolume = false);
+settingsContainer.addEventListener('mouseenter', () => mouseOverSettings = true);
+settingsContainer.addEventListener('mouseleave', () => mouseOverSettings = false);
+centerPlay.addEventListener('mouseenter', () => mouseOverCenter = true);
+centerPlay.addEventListener('mouseleave', () => mouseOverCenter = false);
+
+function showAllControls() {
+    capaControles.classList.add("show");
+    if (video.paused) {
+        centerPlay.classList.add("visible");
+    }
+    clearTimeout(hideControlsTimeout);
+    hideControlsTimeout = setTimeout(() => {
+        if (!mouseOverControls && !mouseOverVolume && !mouseOverSettings && !mouseOverCenter) {
+            capaControles.classList.remove("show");
+            centerPlay.classList.remove("visible");
+        } else {
+            showAllControls();
+        }
     }, 3000);
 }
 
-// Eventos de interacción
-document.addEventListener("mousemove", showControls);
-document.addEventListener("touchstart", showControls);
-
-// Play / Pause
-playPause.addEventListener("click", () => {
-    if (video.paused) {
-        video.play();
-        playPause.textContent = "⏸";
-    } else {
-        video.pause();
-        playPause.textContent = "▶️";
-    }
+['mousemove', 'click', 'touchstart', 'keydown'].forEach(evt => {
+    player.addEventListener(evt, showAllControls);
 });
-
-// Adelantar / Retroceder
-rewind.addEventListener("click", () => video.currentTime -= 10);
-forward.addEventListener("click", () => video.currentTime += 10);
-
-// Mute
-mute.addEventListener("click", () => {
-    video.muted = !video.muted;
-    mute.textContent = video.muted ? "🔇" : "🔊";
-});
-
-// Fullscreen
-fullscreen.addEventListener("click", () => {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-    } else {
-        document.exitFullscreen();
-    }
-});
-
-// Subtítulos (placeholder)
-subtitles.addEventListener("click", () => {
-    alert("Subtítulos no configurados aún");
-});
-
-// Cargar ejemplo HLS
-const url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
-
-if (Hls.isSupported()) {
-    const hls = new Hls();
-    hls.loadSource(url);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, function () {
-        video.play();
-        wrapper.style.display = "block";
-    });
-} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    video.src = url;
-    video.addEventListener('loadedmetadata', () => {
-        video.play();
-        wrapper.style.display = "block";
-    });
-}
-
 </script>
 </body>
 </html>
