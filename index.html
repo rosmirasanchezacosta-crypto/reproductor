@@ -75,8 +75,6 @@ video, iframe {
     display: inline-block; 
     user-select: none; 
     transition: color 0.1s ease;
-    -webkit-tap-highlight-color: transparent !important; 
-    tap-highlight-color: transparent !important; 
 }
 .btn:hover, .btn:focus, .btn:active { 
     color: #bc13fe !important; 
@@ -185,7 +183,6 @@ video, iframe {
     display: none; 
 }
 
-/* Volumen integrado vertical */
 .volume-container {
     position: relative;
     display: inline-flex;
@@ -234,17 +231,7 @@ video, iframe {
     cursor: pointer;
     box-shadow: 0 0 10px rgba(188, 19, 254, 0.9);
 }
-#volumeSlider::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
-    background: #bc13fe;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 0 10px rgba(188, 19, 254, 0.9);
-    border: none;
-}
 
-/* Settings / Configuración */
 .settings-container {
     position: relative;
     display: inline-block;
@@ -293,10 +280,6 @@ video, iframe {
     outline: none;
     cursor: pointer;
 }
-.settings-item select option {
-    background: #1a1a1a;
-    color: white;
-}
 .switch {
     position: relative;
     display: inline-block;
@@ -311,10 +294,7 @@ video, iframe {
 .slider-switch {
     position: absolute;
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    top: 0; left: 0; right: 0; bottom: 0;
     background-color: rgba(255,255,255,0.2);
     transition: .3s;
     border-radius: 20px;
@@ -322,10 +302,8 @@ video, iframe {
 .slider-switch:before {
     position: absolute;
     content: "";
-    height: 14px;
-    width: 14px;
-    left: 3px;
-    bottom: 3px;
+    height: 14px; width: 14px;
+    left: 3px; bottom: 3px;
     background-color: white;
     transition: .3s;
     border-radius: 50%;
@@ -344,7 +322,7 @@ input:checked + .slider-switch:before {
 <div id="player">
     <div id="overlay"><button id="btn-entrar"><div class="play-icon"></div></button></div>
     <div id="timer">Publicidad: <span id="seg">21</span>s</div>
-    <button id="skipBtn" style="display: none; position: absolute; bottom: 80px; right: 20px; z-index: 2020; padding: 10px 20px; background: #8e44ad; color: white; border: none; cursor: pointer;">
+    <button id="skipBtn" style="display: none; position: absolute; bottom: 80px; right: 20px; z-index: 2020; padding: 10px 20px; background: #8e44ad; color: white; border: none; cursor: pointer; border-radius: 5px;">
         Saltar Publicidad ⏭
     </button>
     <div class="video-wrapper" id="wrapper-externo"><div id="bloqueo-flecha"></div><iframe id="videoFrame" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe></div>
@@ -426,8 +404,8 @@ function tipo(u) {
     if (uLower.includes("drive.google.com")) return "drive";
     if (uLower.includes(".m3u8")) return "hls";
     if (uLower.includes(".mpd")) return "dash";
-    if (uLower.includes(".mp4") || uLower.includes("/releases/download/")) return "mp4_puro";
-    return "embed";
+    if (uLower.includes(".mp4") || uLower.includes(".mkv") || uLower.includes("/releases/download/")) return "mp4_puro";
+    return "hls"; // Por defecto tratamos enlaces limpios o workers de streaming como HLS/Video directo
 }
 const tipoContenido = tipo(videoUrl);
 
@@ -452,10 +430,6 @@ function updateAudioTracks() {
             hasTracks = true;
         }
     }
-    
-    if (!hasTracks) {
-        languageSelect.innerHTML = '<option value="">Por defecto</option>';
-    }
 }
 
 function updateSubtitleAvailability() {
@@ -470,7 +444,6 @@ function updateSubtitleAvailability() {
 languageSelect.onchange = () => {
     const val = languageSelect.value;
     if (!val) return;
-    
     if (val.startsWith("hls_")) {
         const idx = parseInt(val.replace("hls_", ""));
         if (window.hlsPlayer) window.hlsPlayer.audioTrack = idx;
@@ -530,14 +503,14 @@ function ejecutarContenidoReal() {
             window.hlsPlayer.loadSource(videoUrl); 
             window.hlsPlayer.attachMedia(video); 
             window.hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => { 
-                video.play(); 
+                video.play().catch(() => {}); 
                 updateAudioTracks();
                 updateSubtitleAvailability();
             });
             window.hlsPlayer.on(Hls.Events.AUDIO_TRACKS_UPDATED, updateAudioTracks);
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) { 
             video.src = videoUrl; 
-            video.play(); 
+            video.play().catch(() => {}); 
         }
     } else if (tipoContenido === "dash") {
         video.style.display = 'block'; 
@@ -552,14 +525,7 @@ function ejecutarContenidoReal() {
         iframe.src = videoUrl;
     }
     
-    if (tipoContenido !== "drive" && tipoContenido !== "embed" && tipoContenido !== "vacio") {
-        video.onloadedmetadata = () => {
-            updateAudioTracks();
-            updateSubtitleAvailability();
-        };
-    }
-    
-    if (tipoContenido === "mp4_puro" || tipoContenido === "hls" || tipoContenido === "dash") {
+    if (tipoContenido === "mp4_puro" || tipoContenido === "hls" || tipoContenedor === "dash") {
         showAllControls();
     }
 }
@@ -613,14 +579,8 @@ function formatTime(s) {
 function togglePlay() { 
     if (video.paused) { 
         video.play(); 
-        playBtn.innerText = "⏸"; 
-        playBtn.classList.add("paused-frame");
-        centerPlay.classList.remove("visible"); 
     } else { 
         video.pause(); 
-        playBtn.innerText = "▶"; 
-        playBtn.classList.add("paused-frame");
-        centerPlay.classList.add("visible"); 
     } 
 }
 playBtn.onclick = togglePlay; 
@@ -629,12 +589,12 @@ centerPlay.onclick = togglePlay;
 video.onplay = () => { 
     centerPlay.classList.remove("visible"); 
     playBtn.innerText = "⏸"; 
-    playBtn.classList.add("paused-frame");
+    playBtn.classList.remove("paused-frame"); // Limpia el borde al reproducir
 };
 video.onpause = () => { 
     centerPlay.classList.add("visible"); 
     playBtn.innerText = "▶"; 
-    playBtn.classList.add("paused-frame");
+    playBtn.classList.add("paused-frame"); // Activa el estilo estético al pausar
 };
 
 muteBtn.onclick = () => { 
@@ -653,19 +613,22 @@ fullscreenBtn.onclick = () => {
 };
 
 video.ontimeupdate = () => { 
-    bar.style.width = (video.currentTime / video.duration) * 100 + "%"; 
+    if(video.duration) {
+        bar.style.width = (video.currentTime / video.duration) * 100 + "%"; 
+    }
     currentTimeDisplay.innerText = formatTime(video.currentTime);
     totalTimeDisplay.innerText = formatTime(video.duration);
 };
 
 progress.onclick = (e) => { 
     const rect = progress.getBoundingClientRect(); 
-    video.currentTime = ((e.clientX - rect.left) / rect.width) * video.duration; 
+    if(video.duration) {
+        video.currentTime = ((e.clientX - rect.left) / rect.width) * video.duration; 
+    }
 };
 
 if (video.muted) muteBtn.innerText = "🔇";
 
-// Auto-hide controles después de 3 segundos
 let hideControlsTimeout;
 let mouseOverControls = false;
 let mouseOverVolume = false;
