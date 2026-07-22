@@ -244,16 +244,16 @@ video, iframe {
     border: none;
 }
 
-/* Settings / Configuración — MENÚ INDEPENDIENTE de la barra de controles */
+/* Settings / Configuración — MENÚ INDEPENDIENTE */
 .settings-menu-standalone {
     position: absolute;
     bottom: 55px;
     right: 15px;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.92);
     border: 1px solid rgba(188, 19, 254, 0.4);
     border-radius: 10px;
     padding: 12px;
-    min-width: 190px;
+    min-width: 200px;
     display: none;
     color: white;
     font-size: 13px;
@@ -279,45 +279,24 @@ video, iframe {
     margin-right: 15px;
     white-space: nowrap;
 }
-.settings-item select {
-    background: rgba(188, 19, 254, 0.15);
-    color: white;
-    border: 1px solid rgba(188, 19, 254, 0.5);
-    border-radius: 6px;
-    padding: 5px 8px;
-    font-size: 12px;
-    outline: none;
-    cursor: pointer;
-}
-.settings-item select option {
-    background: #1a1a1a;
-    color: white;
-}
-.switch {
+
+/* Switch custom puro (sin input nativo) */
+.switch-custom {
     position: relative;
-    display: inline-block;
     width: 38px;
     height: 20px;
-}
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-.slider-switch {
-    position: absolute;
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    flex-shrink: 0;
+}
+.switch-track {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
     background-color: rgba(255,255,255,0.2);
     transition: .3s;
     border-radius: 20px;
 }
-.slider-switch:before {
+.switch-thumb {
     position: absolute;
-    content: "";
     height: 14px;
     width: 14px;
     left: 3px;
@@ -326,12 +305,78 @@ video, iframe {
     transition: .3s;
     border-radius: 50%;
 }
-input:checked + .slider-switch {
+.switch-custom.on .switch-track {
     background-color: #bc13fe;
     box-shadow: 0 0 8px rgba(188, 19, 254, 0.6);
 }
-input:checked + .slider-switch:before {
+.switch-custom.on .switch-thumb {
     transform: translateX(18px);
+}
+.switch-custom.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* Dropdown custom puro (sin select nativo) */
+.dropdown-custom {
+    position: relative;
+    min-width: 110px;
+    flex-shrink: 0;
+}
+.dropdown-selected {
+    background: rgba(188, 19, 254, 0.15);
+    color: white;
+    border: 1px solid rgba(188, 19, 254, 0.5);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: right;
+    white-space: nowrap;
+    user-select: none;
+    position: relative;
+}
+.dropdown-selected::after {
+    content: '▼';
+    font-size: 8px;
+    margin-left: 6px;
+    opacity: 0.7;
+}
+.dropdown-selected.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.dropdown-options {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    right: 0;
+    background: rgba(15, 15, 15, 0.98);
+    border: 1px solid rgba(188, 19, 254, 0.5);
+    border-radius: 8px;
+    min-width: 150px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    z-index: 40;
+    padding: 4px 0;
+    box-shadow: 0 0 15px rgba(188, 19, 254, 0.25);
+}
+.dropdown-options.open {
+    display: block;
+}
+.dropdown-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+.dropdown-option:hover {
+    background: rgba(188, 19, 254, 0.25);
+}
+.dropdown-option.active-option {
+    color: #bc13fe;
+    font-weight: bold;
 }
 </style>
 </head>
@@ -368,20 +413,20 @@ input:checked + .slider-switch:before {
         </div>
     </div>
 
-    <!-- Menú de ajustes FUERA de .controls para evitar que el auto-hide lo congele -->
+    <!-- Menú de ajustes FUERA de .controls — controles 100% custom -->
     <div class="settings-menu-standalone" id="settingsMenu">
         <div class="settings-item">
             <span>Subtítulos</span>
-            <label class="switch">
-                <input type="checkbox" id="subtitleToggle">
-                <span class="slider-switch"></span>
-            </label>
+            <div class="switch-custom" id="subtitleSwitch">
+                <div class="switch-track"><div class="switch-thumb"></div></div>
+            </div>
         </div>
         <div class="settings-item">
             <span>Idioma</span>
-            <select id="languageSelect">
-                <option value="">Por defecto</option>
-            </select>
+            <div class="dropdown-custom" id="languageDropdown">
+                <div class="dropdown-selected" id="languageSelected">Por defecto</div>
+                <div class="dropdown-options" id="languageOptions"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -407,8 +452,10 @@ const video = document.getElementById("video"),
       volumeContainer = document.getElementById("volumeContainer"),
       settingsBtn = document.getElementById("settingsBtn"),
       settingsMenu = document.getElementById("settingsMenu"),
-      subtitleToggle = document.getElementById("subtitleToggle"),
-      languageSelect = document.getElementById("languageSelect"),
+      subtitleSwitch = document.getElementById("subtitleSwitch"),
+      languageDropdown = document.getElementById("languageDropdown"),
+      languageSelected = document.getElementById("languageSelected"),
+      languageOptions = document.getElementById("languageOptions"),
       player = document.getElementById("player"),
       skipBtn = document.getElementById("skipBtn");
 
@@ -426,71 +473,14 @@ function tipo(u) {
 }
 const tipoContenido = tipo(videoUrl);
 
-function updateAudioTracks() {
-    languageSelect.innerHTML = '<option value="">Por defecto</option>';
-    let hasTracks = false;
-    
-    // HLS
-    if (window.hlsPlayer && window.hlsPlayer.audioTracks && window.hlsPlayer.audioTracks.length > 0) {
-        window.hlsPlayer.audioTracks.forEach((track, index) => {
-            const opt = document.createElement("option");
-            opt.value = "hls_" + index;
-            opt.text = track.name || track.lang || `Pista ${index + 1}`;
-            languageSelect.appendChild(opt);
-            hasTracks = true;
-        });
-    }
-    // DASH
-    else if (window.dashPlayer && typeof window.dashPlayer.getTracksFor === 'function') {
-        try {
-            const audioTracks = window.dashPlayer.getTracksFor('audio');
-            if (audioTracks && audioTracks.length > 0) {
-                audioTracks.forEach((track, index) => {
-                    const opt = document.createElement("option");
-                    opt.value = "dash_" + index;
-                    opt.text = track.lang || (track.labels ? track.labels.join(', ') : '') || `Pista ${index + 1}`;
-                    languageSelect.appendChild(opt);
-                    hasTracks = true;
-                });
-            }
-        } catch(e) {}
-    }
-    // Native video audio tracks
-    else if (video.audioTracks && video.audioTracks.length > 0) {
-        for (let i = 0; i < video.audioTracks.length; i++) {
-            const opt = document.createElement("option");
-            opt.value = "native_" + i;
-            opt.text = video.audioTracks[i].label || video.audioTracks[i].language || `Pista ${i + 1}`;
-            languageSelect.appendChild(opt);
-            hasTracks = true;
-        }
-    }
-    
-    languageSelect.disabled = !hasTracks;
-}
+// Estado interno
+let subtitleEnabled = false;
+let currentLanguageValue = "";
+let languageItems = []; // {value, label}
 
-function hasSubtitles() {
-    if (video.textTracks && video.textTracks.length > 0) return true;
-    if (window.hlsPlayer && window.hlsPlayer.subtitleTracks && window.hlsPlayer.subtitleTracks.length > 0) return true;
-    return false;
-}
-
-function updateSubtitleAvailability() {
-    const subtitleItem = subtitleToggle.closest('.settings-item');
-    subtitleItem.style.display = 'flex';
-    if (hasSubtitles()) {
-        subtitleToggle.disabled = false;
-        subtitleItem.style.opacity = '1';
-    } else {
-        subtitleToggle.disabled = true;
-        subtitleItem.style.opacity = '0.4';
-    }
-}
-
-languageSelect.onchange = () => {
-    const val = languageSelect.value;
+function applyLanguage(val) {
     if (!val) return;
-    
+    currentLanguageValue = val;
     if (val.startsWith("hls_")) {
         const idx = parseInt(val.replace("hls_", ""));
         if (window.hlsPlayer) window.hlsPlayer.audioTrack = idx;
@@ -512,34 +502,161 @@ languageSelect.onchange = () => {
             }
         }
     }
-};
+}
 
-subtitleToggle.onchange = () => {
-    // Native text tracks
+function applySubtitles(enabled) {
+    subtitleEnabled = enabled;
     if (video.textTracks && video.textTracks.length > 0) {
         for (let i = 0; i < video.textTracks.length; i++) {
-            video.textTracks[i].mode = subtitleToggle.checked ? "showing" : "hidden";
+            video.textTracks[i].mode = enabled ? "showing" : "hidden";
         }
     }
-    // HLS subtitle tracks
     if (window.hlsPlayer && window.hlsPlayer.subtitleTracks) {
-        if (subtitleToggle.checked) {
+        if (enabled) {
             window.hlsPlayer.subtitleTrack = 0;
         } else {
             window.hlsPlayer.subtitleTrack = -1;
         }
     }
-};
+}
 
-settingsBtn.onclick = (e) => {
+function hasSubtitles() {
+    if (video.textTracks && video.textTracks.length > 0) return true;
+    if (window.hlsPlayer && window.hlsPlayer.subtitleTracks && window.hlsPlayer.subtitleTracks.length > 0) return true;
+    return false;
+}
+
+function buildLanguageDropdown() {
+    languageOptions.innerHTML = '';
+    languageItems = [];
+    let hasTracks = false;
+    
+    // Opción por defecto
+    languageItems.push({value: "", label: "Por defecto"});
+    
+    // HLS
+    if (window.hlsPlayer && window.hlsPlayer.audioTracks && window.hlsPlayer.audioTracks.length > 0) {
+        window.hlsPlayer.audioTracks.forEach((track, index) => {
+            languageItems.push({
+                value: "hls_" + index,
+                label: track.name || track.lang || `Pista ${index + 1}`
+            });
+            hasTracks = true;
+        });
+    }
+    // DASH
+    else if (window.dashPlayer && typeof window.dashPlayer.getTracksFor === 'function') {
+        try {
+            const audioTracks = window.dashPlayer.getTracksFor('audio');
+            if (audioTracks && audioTracks.length > 0) {
+                audioTracks.forEach((track, index) => {
+                    languageItems.push({
+                        value: "dash_" + index,
+                        label: track.lang || (track.labels ? track.labels.join(', ') : '') || `Pista ${index + 1}`
+                    });
+                    hasTracks = true;
+                });
+            }
+        } catch(e) {}
+    }
+    // Native
+    else if (video.audioTracks && video.audioTracks.length > 0) {
+        for (let i = 0; i < video.audioTracks.length; i++) {
+            languageItems.push({
+                value: "native_" + i,
+                label: video.audioTracks[i].label || video.audioTracks[i].language || `Pista ${i + 1}`
+            });
+            hasTracks = true;
+        }
+    }
+    
+    // Renderizar opciones
+    languageItems.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'dropdown-option';
+        div.textContent = item.label;
+        div.dataset.value = item.value;
+        if (item.value === currentLanguageValue) div.classList.add('active-option');
+        div.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectLanguage(item.value, item.label);
+        });
+        languageOptions.appendChild(div);
+    });
+    
+    if (!hasTracks) {
+        languageDropdown.classList.add('disabled');
+        languageSelected.classList.add('disabled');
+    } else {
+        languageDropdown.classList.remove('disabled');
+        languageSelected.classList.remove('disabled');
+    }
+}
+
+function selectLanguage(value, label) {
+    currentLanguageValue = value;
+    languageSelected.textContent = label || "Por defecto";
+    closeLanguageDropdown();
+    applyLanguage(value);
+    // Refrescar visual de opción activa
+    Array.from(languageOptions.children).forEach(child => {
+        child.classList.toggle('active-option', child.dataset.value === value);
+    });
+}
+
+function openLanguageDropdown() {
+    if (languageDropdown.classList.contains('disabled')) return;
+    languageOptions.classList.add('open');
+}
+
+function closeLanguageDropdown() {
+    languageOptions.classList.remove('open');
+}
+
+function updateSubtitleUI() {
+    const has = hasSubtitles();
+    if (has) {
+        subtitleSwitch.classList.remove('disabled');
+    } else {
+        subtitleSwitch.classList.add('disabled');
+        subtitleSwitch.classList.remove('on');
+        subtitleEnabled = false;
+    }
+}
+
+// Click en switch de subtítulos
+subtitleSwitch.addEventListener('click', (e) => {
     e.stopPropagation();
-    settingsMenu.classList.toggle("active");
-    showAllControls();
-};
+    if (subtitleSwitch.classList.contains('disabled')) return;
+    subtitleEnabled = !subtitleEnabled;
+    subtitleSwitch.classList.toggle('on', subtitleEnabled);
+    applySubtitles(subtitleEnabled);
+});
 
-document.addEventListener("click", (e) => {
+// Click en dropdown de idioma
+languageSelected.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (languageDropdown.classList.contains('disabled')) return;
+    if (languageOptions.classList.contains('open')) {
+        closeLanguageDropdown();
+    } else {
+        openLanguageDropdown();
+    }
+});
+
+// Botón de ajustes (abre/cierra menú)
+settingsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isActive = settingsMenu.classList.toggle('active');
+    if (!isActive) closeLanguageDropdown();
+    showAllControls();
+});
+
+// Cerrar menú al hacer clic fuera
+document.addEventListener('click', (e) => {
     if (!settingsBtn.contains(e.target) && !settingsMenu.contains(e.target)) {
-        settingsMenu.classList.remove("active");
+        settingsMenu.classList.remove('active');
+        closeLanguageDropdown();
     }
 });
 
@@ -571,11 +688,11 @@ function ejecutarContenidoReal() {
             window.hlsPlayer.attachMedia(video); 
             window.hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => { 
                 video.play(); 
-                updateAudioTracks();
-                updateSubtitleAvailability();
+                buildLanguageDropdown();
+                updateSubtitleUI();
             });
-            window.hlsPlayer.on(Hls.Events.AUDIO_TRACKS_UPDATED, updateAudioTracks);
-            window.hlsPlayer.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, updateSubtitleAvailability);
+            window.hlsPlayer.on(Hls.Events.AUDIO_TRACKS_UPDATED, buildLanguageDropdown);
+            window.hlsPlayer.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, updateSubtitleUI);
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) { 
             video.src = videoUrl; 
             video.play(); 
@@ -587,10 +704,10 @@ function ejecutarContenidoReal() {
         window.dashPlayer = dashjs.MediaPlayer().create(); 
         window.dashPlayer.initialize(video, videoUrl, true);
         window.dashPlayer.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, () => {
-            updateAudioTracks();
-            updateSubtitleAvailability();
+            buildLanguageDropdown();
+            updateSubtitleUI();
         });
-        setTimeout(() => { updateAudioTracks(); updateSubtitleAvailability(); }, 1000);
+        setTimeout(() => { buildLanguageDropdown(); updateSubtitleUI(); }, 1000);
     } else {
         wrapperExterno.style.display = 'block'; 
         iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-same-origin'); 
@@ -599,12 +716,12 @@ function ejecutarContenidoReal() {
     
     if (tipoContenido !== "drive" && tipoContenido !== "embed" && tipoContenido !== "vacio") {
         video.onloadedmetadata = () => {
-            updateAudioTracks();
-            updateSubtitleAvailability();
+            buildLanguageDropdown();
+            updateSubtitleUI();
         };
         video.addEventListener('loadeddata', () => {
-            updateAudioTracks();
-            updateSubtitleAvailability();
+            buildLanguageDropdown();
+            updateSubtitleUI();
         });
     }
     
