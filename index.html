@@ -426,7 +426,8 @@ function tipo(u) {
     if (uLower.includes("drive.google.com")) return "drive";
     if (uLower.includes(".m3u8")) return "hls";
     if (uLower.includes(".mpd")) return "dash";
-    if (uLower.includes(".mp4") || uLower.includes("/releases/download/")) return "mp4_puro";
+    // Agregamos .mkv y enlaces de series/video directos al reproductor nativo
+    if (uLower.includes(".mp4") || uLower.includes(".mkv") || uLower.includes("/series/") || uLower.includes("/movie/") || uLower.includes("/live/")) return "mp4_puro";
     return "embed";
 }
 const tipoContenido = tipo(videoUrl);
