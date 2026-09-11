@@ -468,7 +468,7 @@ video, iframe {
     <div id="overlay"><button id="btn-entrar"><div class="play-icon"></div></button></div>
     
     <!-- BOTÓN UNIFICADO: CONTEO DE PUBLICIDAD -> SALTAR A LOS 15s -->
-    <button id="adBtn" class="ad-counting"><span id="adText">Publicidad · 21s</span></button>
+    <button id="adBtn" class="ad-counting" style="display: none;"><span id="adText">Publicidad · 21s</span></button>
 
     <div class="video-wrapper" id="wrapper-externo"><div id="bloqueo-flecha"></div><iframe id="videoFrame" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe></div>
     <video id="video" style="display: none;" playsinline></video>
@@ -506,7 +506,7 @@ video, iframe {
 
 <script>
 // ============================================================
-// KikeFlix Player PRO — Funcional de verdad
+// KikeFlix Player PRO
 // ============================================================
 
 var video = document.getElementById("video"),
@@ -542,6 +542,31 @@ var videoUrl = params.get("video") || "https://test-streams.mux.dev/x36xhzz/x36x
     adUrl = params.get("ad"),
     subUrl = params.get("subtitle"),
     audioUrl = params.get("audio");
+
+function parseTrackList(raw) {
+    if (!raw) return [];
+    return raw.split(',').map(function(item) {
+        var trimmed = item.trim();
+        if (!trimmed) return null;
+        var parts = trimmed.split(':');
+        if (parts.length >= 2) {
+            var label = parts[0].trim();
+            var url = parts.slice(1).join(':').trim();
+            return { label: label, url: url };
+        }
+        return { label: 'Pista', url: trimmed };
+    }).filter(Boolean);
+}
+
+var parsedAudios = parseTrackList(params.get("audios"));
+if (audioUrl && !parsedAudios.some(function(a) { return a.url === audioUrl; })) {
+    parsedAudios.unshift({ label: 'Audio Externo', url: audioUrl });
+}
+
+var parsedSubs = parseTrackList(params.get("subtitles"));
+if (subUrl && !parsedSubs.some(function(s) { return s.url === subUrl; })) {
+    parsedSubs.unshift({ label: 'Subtítulo', url: subUrl });
+}
 
 // ===== Idiomas =====
 var LANG_NAMES = {
@@ -693,6 +718,125 @@ pipBtn.onclick = function() {
 // SISTEMA DE AUDIO E IDIOMA
 // ============================================================
 
+function loadExternalAudioFile() {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/*,.mp3,.m4a,.aac,.ogg,.wav';
+    input.onchange = function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var blobUrl = URL.createObjectURL(file);
+        var cleanName = file.name.replace(/\.[^/.]+$/, '');
+        var newIdx = availableAudio.length;
+        availableAudio.push({
+            label: '📁 ' + cleanName,
+            type: 'external',
+            url: blobUrl,
+        });
+        setAudioTrack(newIdx);
+    };
+    input.click();
+}
+
+function loadExternalAudio(url) {
+    if (externalAudioEl) {
+        if (externalAudioEl._cleanup) externalAudioEl._cleanup();
+        externalAudioEl.pause();
+        externalAudioEl.remove();
+        externalAudioEl = null;
+    }
+    
+    externalAudioEl = document.createElement('audio');
+    externalAudioEl.src = url;
+    externalAudioEl.volume = video.volume;
+    externalAudioEl.muted = video.muted;
+    externalAudioEl.playbackRate = video.playbackRate;
+    externalAudioEl.currentTime = video.currentTime;
+    
+    // Silenciar video original, sincronizar audio externo
+    video.muted = true;
+    muteBtn.innerText = externalAudioEl.muted ? '🔇' : '🔊';
+
+    var onPlay = function() {
+        if (externalAudioEl) {
+            externalAudioEl.currentTime = video.currentTime;
+            externalAudioEl.play().catch(function() {});
+        }
+    };
+    var onPause = function() {
+        if (externalAudioEl) externalAudioEl.pause();
+    };
+    var onSeeking = function() {
+        if (externalAudioEl) externalAudioEl.currentTime = video.currentTime;
+    };
+    var onSeeked = function() {
+        if (externalAudioEl) externalAudioEl.currentTime = video.currentTime;
+    };
+    var onTimeUpdate = function() {
+        if (externalAudioEl && !externalAudioEl.paused && !video.paused) {
+            var diff = Math.abs(externalAudioEl.currentTime - video.currentTime);
+            if (diff > 0.25) externalAudioEl.currentTime = video.currentTime;
+        }
+    };
+    var onRateChange = function() {
+        if (externalAudioEl) externalAudioEl.playbackRate = video.playbackRate;
+    };
+    var onWaiting = function() {
+        if (externalAudioEl) externalAudioEl.pause();
+    };
+    var onPlaying = function() {
+        if (externalAudioEl && !video.paused) {
+            externalAudioEl.currentTime = video.currentTime;
+            externalAudioEl.play().catch(function() {});
+        }
+    };
+
+    video.addEventListener('play', onPlay);
+    video.addEventListener('pause', onPause);
+    video.addEventListener('seeking', onSeeking);
+    video.addEventListener('seeked', onSeeked);
+    video.addEventListener('timeupdate', onTimeUpdate);
+    video.addEventListener('ratechange', onRateChange);
+    video.addEventListener('waiting', onWaiting);
+    video.addEventListener('playing', onPlaying);
+
+    externalAudioEl._cleanup = function() {
+        video.removeEventListener('play', onPlay);
+        video.removeEventListener('pause', onPause);
+        video.removeEventListener('seeking', onSeeking);
+        video.removeEventListener('seeked', onSeeked);
+        video.removeEventListener('timeupdate', onTimeUpdate);
+        video.removeEventListener('ratechange', onRateChange);
+        video.removeEventListener('waiting', onWaiting);
+        video.removeEventListener('playing', onPlaying);
+    };
+
+    volumeSlider.oninput = function(e) {
+        var v = parseFloat(e.target.value);
+        if (externalAudioEl) {
+            externalAudioEl.volume = v;
+            externalAudioEl.muted = (v === 0);
+        }
+        muteBtn.innerText = (v === 0) ? '🔇' : '🔊';
+    };
+
+    muteBtn.onclick = function() {
+        if (externalAudioEl) {
+            externalAudioEl.muted = !externalAudioEl.muted;
+            video.muted = true;
+            muteBtn.innerText = externalAudioEl.muted ? '🔇' : '🔊';
+            if (volumeSlider) {
+                volumeSlider.value = externalAudioEl.muted ? '0' : String(externalAudioEl.volume);
+            }
+        }
+    };
+
+    if (!video.paused) {
+        externalAudioEl.play().catch(function() {});
+    }
+    showToast('🔊 Audio externo sincronizado');
+}
+
 function detectAudioTracks() {
     availableAudio = [];
     
@@ -726,28 +870,41 @@ function detectAudioTracks() {
             }
         } catch(e) {}
     }
-    // HTML5 native audioTracks
-    else if (video.audioTracks && video.audioTracks.length > 0) {
-        for (var i = 0; i < video.audioTracks.length; i++) {
-            var t = video.audioTracks[i];
-            availableAudio.push({
-                label: langName(t.language) + (t.label ? ' - ' + t.label : ''),
-                lang: t.language,
-                type: 'native',
-                index: i
-            });
-        }
+    else {
+        // MP4 / MKV / WebM: Pista base original
+        availableAudio.push({
+            label: '🔊 Audio original (Video)',
+            lang: 'original',
+            type: 'video-original'
+        });
         if (currentAudioIdx === -1) currentAudioIdx = 0;
+
+        // Detección nativa si el navegador la soporta (Safari / iOS)
+        var nativeAudio = video.audioTracks;
+        if (nativeAudio && nativeAudio.length > 0) {
+            for (var i = 0; i < nativeAudio.length; i++) {
+                var t = nativeAudio[i];
+                availableAudio.push({
+                    label: langName(t.language) + (t.label ? ' - ' + t.label : ''),
+                    lang: t.language,
+                    type: 'native',
+                    index: i
+                });
+            }
+        }
     }
     
-    // Audio externo por URL
-    if (audioUrl) {
-        availableAudio.push({
-            label: '📁 Audio externo',
-            type: 'external',
-            url: audioUrl
-        });
-    }
+    // Audios de URL (?audios=... o ?audio=...)
+    parsedAudios.forEach(function(pa) {
+        var already = availableAudio.some(function(a) { return a.url === pa.url; });
+        if (!already) {
+            availableAudio.push({
+                label: '🔊 ' + pa.label,
+                type: 'external',
+                url: pa.url
+            });
+        }
+    });
     
     updateLangBadge();
 }
@@ -755,60 +912,55 @@ function detectAudioTracks() {
 function setAudioTrack(idx) {
     if (idx < 0 || idx >= availableAudio.length) return;
     var track = availableAudio[idx];
+    currentAudioIdx = idx;
     
-    if (track.type === 'hls' && hlsPlayer) {
+    if (track.type === 'video-original') {
+        if (externalAudioEl) {
+            if (externalAudioEl._cleanup) externalAudioEl._cleanup();
+            externalAudioEl.pause();
+            externalAudioEl.remove();
+            externalAudioEl = null;
+        }
+        video.muted = false;
+        muteBtn.innerText = video.muted ? '🔇' : '🔊';
+        if (volumeSlider) volumeSlider.value = String(video.volume);
+
+        volumeSlider.oninput = function(e) {
+            var v = parseFloat(e.target.value);
+            video.volume = v;
+            video.muted = (v === 0);
+            muteBtn.innerText = (v === 0) ? '🔇' : '🔊';
+        };
+        muteBtn.onclick = function() {
+            video.muted = !video.muted;
+            muteBtn.innerText = video.muted ? '🔇' : '🔊';
+            if (volumeSlider) volumeSlider.value = video.muted ? '0' : String(video.volume);
+        };
+        showToast('🔊 Audio original restaurado');
+    } else if (track.type === 'hls' && hlsPlayer) {
         hlsPlayer.audioTrack = track.index;
-        currentAudioIdx = idx;
         showToast('🔊 ' + track.label);
     } else if (track.type === 'dash' && dashPlayer) {
         try {
             dashPlayer.setCurrentTrack(track.dashTrack);
-            currentAudioIdx = idx;
             showToast('🔊 ' + track.label);
         } catch(e) { showToast('Error al cambiar audio'); }
     } else if (track.type === 'native') {
-        for (var i = 0; i < video.audioTracks.length; i++) {
-            video.audioTracks[i].enabled = (i === track.index);
+        var nativeAudio = video.audioTracks;
+        if (nativeAudio) {
+            for (var i = 0; i < nativeAudio.length; i++) {
+                nativeAudio[i].enabled = (i === track.index);
+            }
         }
-        currentAudioIdx = idx;
         showToast('🔊 ' + track.label);
     } else if (track.type === 'external') {
         loadExternalAudio(track.url);
-        currentAudioIdx = idx;
+        showToast('🔊 ' + track.label);
     }
     
     updateLangBadge();
-    menuPage = 'main'; buildMenu();
-}
-
-function loadExternalAudio(url) {
-    if (externalAudioEl) { externalAudioEl.pause(); externalAudioEl.remove(); }
-    externalAudioEl = document.createElement('audio');
-    externalAudioEl.src = url;
-    externalAudioEl.volume = video.volume;
-    
-    video.muted = true;
-    muteBtn.innerText = '🔊';
-    
-    video.addEventListener('play', function() { externalAudioEl.play().catch(function(){}); });
-    video.addEventListener('pause', function() { externalAudioEl.pause(); });
-    video.addEventListener('seeked', function() { externalAudioEl.currentTime = video.currentTime; });
-    
-    volumeSlider.oninput = function(e) {
-        var v = parseFloat(e.target.value);
-        externalAudioEl.volume = v;
-        externalAudioEl.muted = (v === 0);
-        muteBtn.innerText = (v === 0) ? '🔇' : '🔊';
-    };
-    
-    muteBtn.onclick = function() {
-        externalAudioEl.muted = !externalAudioEl.muted;
-        video.muted = true;
-        muteBtn.innerText = externalAudioEl.muted ? '🔇' : '🔊';
-    };
-    
-    externalAudioEl.play().catch(function(){});
-    showToast('🔊 Audio externo cargado');
+    menuPage = 'main';
+    buildMenu();
 }
 
 function updateLangBadge() {
@@ -875,15 +1027,18 @@ function detectSubtitleTracks() {
         }
     }
     
-    // Subtítulo externo por URL
-    if (subUrl) {
-        availableSubs.push({
-            label: '📁 Subtítulo externo',
-            lang: 'ext',
-            type: 'external-url',
-            url: subUrl
-        });
-    }
+    // Subtítulos de URL (?subtitles=... o ?subtitle=...)
+    parsedSubs.forEach(function(ps) {
+        var already = availableSubs.some(function(s) { return s.url === ps.url; });
+        if (!already) {
+            availableSubs.push({
+                label: '💬 ' + ps.label,
+                lang: 'ext',
+                type: 'external-url',
+                url: ps.url
+            });
+        }
+    });
     
     updateSubBadge();
 }
@@ -939,7 +1094,7 @@ function setSubtitleTrack(idx) {
             showToast('💬 Subtítulos externos ON');
             
         } else if (track.type === 'external-url') {
-            loadExternalSubtitleUrl(track.url);
+            loadExternalSubtitleUrl(track.url, track.label.replace('💬 ', ''));
             showToast('💬 Cargando subtítulos...');
         }
     } else {
@@ -960,7 +1115,9 @@ function loadExternalSubtitle() {
         var reader = new FileReader();
         reader.onload = function(ev) {
             var text = ev.target.result;
-            if (file.name.endsWith('.srt')) text = srtToVtt(text);
+            if (file.name.endsWith('.srt') || (text.includes('-->') && !text.startsWith('WEBVTT'))) {
+                text = srtToVtt(text);
+            }
             var blob = new Blob([text], { type: 'text/vtt' });
             var blobUrl = URL.createObjectURL(blob);
             addVttTrack(blobUrl, file.name);
@@ -970,14 +1127,16 @@ function loadExternalSubtitle() {
     input.click();
 }
 
-function loadExternalSubtitleUrl(url) {
+function loadExternalSubtitleUrl(url, label) {
     fetch(url).then(function(r) { return r.text(); }).then(function(text) {
-        if (url.toLowerCase().endsWith('.srt')) text = srtToVtt(text);
+        if (url.toLowerCase().endsWith('.srt') || (text.includes('-->') && !text.startsWith('WEBVTT'))) {
+            text = srtToVtt(text);
+        }
         var blob = new Blob([text], { type: 'text/vtt' });
         var blobUrl = URL.createObjectURL(blob);
-        addVttTrack(blobUrl, 'Externo URL');
+        addVttTrack(blobUrl, label || 'Subtítulo URL');
     }).catch(function() {
-        addVttTrack(url, 'Externo URL');
+        addVttTrack(url, label || 'Subtítulo URL');
     });
 }
 
@@ -1074,8 +1233,10 @@ function buildMenu() {
             });
         }
         html += '<div class="divider"></div>';
-        html += '<div class="settings-item" data-audio="load">';
-        html += '<span class="s-label">📁 Cargar audio externo (mp3/m4a)</span></div>';
+        html += '<div class="settings-item" data-audio="load-file">';
+        html += '<span class="s-label">📁 Subir audio (.mp3, .m4a, .aac)</span></div>';
+        html += '<div class="settings-item" data-audio="load-url">';
+        html += '<span class="s-label">🌐 Ingresar enlace de audio</span></div>';
         
     } else if (menuPage === 'subtitle') {
         html += '<div class="settings-header back-header" data-page="main">‹ 💬 Subtítulos</div>';
@@ -1091,8 +1252,10 @@ function buildMenu() {
         });
         
         html += '<div class="divider"></div>';
-        html += '<div class="settings-item" data-sub="load">';
-        html += '<span class="s-label">📁 Cargar subtítulo (.vtt / .srt)</span></div>';
+        html += '<div class="settings-item" data-sub="load-file">';
+        html += '<span class="s-label">📁 Subir subtítulo (.srt / .vtt)</span></div>';
+        html += '<div class="settings-item" data-sub="load-url">';
+        html += '<span class="s-label">🌐 Ingresar enlace de subtítulo</span></div>';
         
     } else if (menuPage === 'quality') {
         html += '<div class="settings-header back-header" data-page="main">‹ 📊 Calidad</div>';
@@ -1146,9 +1309,20 @@ function bindMenuEvents() {
     settingsMenu.querySelectorAll('[data-audio]').forEach(function(el) {
         el.onclick = function(e) {
             e.stopPropagation();
-            if (el.dataset.audio === 'load') {
-                var url = prompt('URL del archivo de audio (mp3, m4a, ogg):');
-                if (url && url.trim()) loadExternalAudio(url.trim());
+            if (el.dataset.audio === 'load-file') {
+                loadExternalAudioFile();
+                settingsContainer.classList.remove('active');
+            } else if (el.dataset.audio === 'load-url' || el.dataset.audio === 'load') {
+                var url = prompt('URL del archivo de audio (mp3, m4a, ogg, aac):');
+                if (url && url.trim()) {
+                    var newIdx = availableAudio.length;
+                    availableAudio.push({
+                        label: '🔊 Audio URL',
+                        type: 'external',
+                        url: url.trim()
+                    });
+                    setAudioTrack(newIdx);
+                }
                 settingsContainer.classList.remove('active');
             } else {
                 setAudioTrack(parseInt(el.dataset.audio));
@@ -1159,8 +1333,14 @@ function bindMenuEvents() {
     settingsMenu.querySelectorAll('[data-sub]').forEach(function(el) {
         el.onclick = function(e) {
             e.stopPropagation();
-            if (el.dataset.sub === 'load') {
+            if (el.dataset.sub === 'load-file' || el.dataset.sub === 'load') {
                 loadExternalSubtitle();
+                settingsContainer.classList.remove('active');
+            } else if (el.dataset.sub === 'load-url') {
+                var url = prompt('URL del subtítulo (.vtt o .srt):');
+                if (url && url.trim()) {
+                    loadExternalSubtitleUrl(url.trim(), 'Subtítulo URL');
+                }
                 settingsContainer.classList.remove('active');
             } else if (el.dataset.sub === '-1') {
                 setSubtitleTrack(-1);
@@ -1289,6 +1469,11 @@ function ejecutarContenidoReal() {
         centerPlay.classList.add("visible");
         video.src = videoUrl;
         video.play().catch(function(){});
+        detectAudioTracks();
+        detectSubtitleTracks();
+        parsedSubs.forEach(function(ps) {
+            loadExternalSubtitleUrl(ps.url, ps.label);
+        });
     } else if (tipoCont === "hls") {
         video.style.display = 'block';
         controls.style.display = 'block';
@@ -1305,7 +1490,9 @@ function ejecutarContenidoReal() {
                 video.play().catch(function(){});
                 detectAudioTracks();
                 detectSubtitleTracks();
-                if (subUrl) loadExternalSubtitleUrl(subUrl);
+                parsedSubs.forEach(function(ps) {
+                    loadExternalSubtitleUrl(ps.url, ps.label);
+                });
             });
             hlsPlayer.on(Hls.Events.AUDIO_TRACKS_UPDATED, function() {
                 detectAudioTracks();
@@ -1336,7 +1523,13 @@ function ejecutarContenidoReal() {
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = videoUrl;
             video.play().catch(function(){});
-            setTimeout(function() { detectAudioTracks(); detectSubtitleTracks(); }, 2000);
+            setTimeout(function() {
+                detectAudioTracks();
+                detectSubtitleTracks();
+                parsedSubs.forEach(function(ps) {
+                    loadExternalSubtitleUrl(ps.url, ps.label);
+                });
+            }, 2000);
         }
     } else if (tipoCont === "dash") {
         video.style.display = 'block';
@@ -1348,7 +1541,9 @@ function ejecutarContenidoReal() {
         setTimeout(function() {
             detectAudioTracks();
             detectSubtitleTracks();
-            if (subUrl) loadExternalSubtitleUrl(subUrl);
+            parsedSubs.forEach(function(ps) {
+                loadExternalSubtitleUrl(ps.url, ps.label);
+            });
         }, 1500);
     } else {
         wrapperExterno.style.display = 'block';
@@ -1356,10 +1551,31 @@ function ejecutarContenidoReal() {
         iframe.src = videoUrl;
     }
     
+    video.onerror = function() {
+        var err = video.error;
+        var msg = '⚠️ Error al reproducir el video';
+        if (err) {
+            if (err.code === 4) {
+                msg = '⚠️ Formato o códec no soportado por este navegador (en MKV el navegador no suele admitir el códec de audio o contenedor; usa MP4 o HLS)';
+            } else if (err.code === 2) {
+                msg = '⚠️ Error de red al cargar el video';
+            } else if (err.code === 3) {
+                msg = '⚠️ Error de decodificación en el video';
+            }
+        }
+        showToast(msg, 4500);
+    };
+
     if (tipoCont === 'mp4' || tipoCont === 'hls' || tipoCont === 'dash') {
         video.onloadedmetadata = function() {
             detectAudioTracks();
             detectSubtitleTracks();
+            buildMenu();
+        };
+        video.onloadeddata = function() {
+            detectAudioTracks();
+            detectSubtitleTracks();
+            buildMenu();
         };
         showAllControls();
     }
