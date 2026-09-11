@@ -180,7 +180,7 @@ video, iframe {
 }
 #timer { 
     position: absolute; 
-    top: 20px; right: 20px; 
+    top: 76px; right: 20px; 
     background: rgba(0,0,0,0.85); 
     color: white; 
     padding: 10px 16px; 
@@ -426,15 +426,41 @@ input:checked + .slider-sw:before {
     transform: translateX(18px);
 }
 
+/* Logo en la parte superior derecha */
+.player-logo {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    z-index: 60;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    user-select: none;
+}
+.player-logo img {
+    height: 48px;
+    max-width: 180px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.85));
+}
+
 @media(max-width:600px){
     .btn { font-size: 18px; min-width: 40px; height: 40px; }
     .settings-menu { min-width: 210px; font-size: 12px; }
+    .player-logo { top: 12px; right: 12px; }
+    .player-logo img { height: 34px; max-width: 120px; }
 }
 </style>
 </head>
 <body oncontextmenu="return false">
 
 <div id="player">
+    <!-- LOGO EN LA PARTE SUPERIOR DERECHA -->
+    <div class="player-logo">
+        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEil2dds7gIHlc-jR_PV41bR6HiwYzt4n7ciZhiP8KlTlWXXIyZrrYzCYP1UwpK-bLTm6eI4Rpvhvaq3Z-7l5qIyR-BuJnDIi_SjWJ2dWcWS31q7zCws74ta2IAa10-ohsOXV44ts5rekRSCpfjoDAAgJcpXnFo2VXljQ2lswxjM6CkdJI1nGq_cqmuGbBg/s1600/logo300px.png" alt="Logo" referrerpolicy="no-referrer">
+    </div>
+
     <div id="overlay"><button id="btn-entrar"><div class="play-icon"></div></button></div>
     <div id="timer">Publicidad: <span id="seg">21</span>s</div>
     <button id="skipBtn">Saltar Publicidad ⏭</button>
@@ -507,7 +533,7 @@ var video = document.getElementById("video"),
 
 // ===== Parámetros URL =====
 var params = new URLSearchParams(window.location.search + window.location.hash.replace('#', '&'));
-var videoUrl = params.get("video"),
+var videoUrl = params.get("video") || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
     adUrl = params.get("ad"),
     subUrl = params.get("subtitle"),
     audioUrl = params.get("audio");
