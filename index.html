@@ -231,53 +231,75 @@ video, iframe {
     50% { box-shadow: 0 0 28px rgba(188, 19, 254, 0.85); }
 }
 
-/* Volumen vertical */
+/* Control de Volumen horizontal expandible y táctil */
 .volume-container {
     position: relative;
     display: inline-flex;
     align-items: center;
     margin-right: 12px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 2px 4px 2px 2px;
+    transition: all 0.25s ease;
+}
+.volume-container:hover,
+.volume-container.active {
+    background: rgba(188,19,254,0.18);
+    box-shadow: 0 0 12px rgba(188,19,254,0.3);
 }
 .volume-slider-wrapper {
-    position: absolute;
-    bottom: calc(100% + 12px);
-    left: 50%;
-    transform: translateX(-50%);
-    width: 34px; height: 110px;
-    background: rgba(0,0,0,0.8);
-    border-radius: 18px;
-    display: none;
-    justify-content: center;
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
+    display: inline-flex;
     align-items: center;
-    border: 1px solid rgba(188,19,254,0.35);
-    box-shadow: 0 0 15px rgba(188,19,254,0.2);
-    z-index: 20;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+    padding-left: 0;
 }
 .volume-container:hover .volume-slider-wrapper,
 .volume-container.active .volume-slider-wrapper {
-    display: flex;
+    width: 90px;
+    opacity: 1;
+    padding-left: 6px;
+    padding-right: 6px;
 }
 #volumeSlider {
     -webkit-appearance: none;
-    width: 80px; height: 4px;
-    background: rgba(188,19,254,0.35);
-    border-radius: 2px;
+    appearance: none;
+    width: 80px;
+    height: 5px;
+    background: linear-gradient(to right, #bc13fe 100%, rgba(255,255,255,0.2) 100%);
+    border-radius: 3px;
     outline: none;
-    transform: rotate(-90deg);
+    transform: none;
     cursor: pointer;
+    transition: background 0.1s linear;
 }
 #volumeSlider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 14px; height: 14px;
-    background: #bc13fe; border-radius: 50%;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #ffffff;
+    border: 2px solid #bc13fe;
+    border-radius: 50%;
     cursor: pointer;
     box-shadow: 0 0 10px rgba(188,19,254,0.9);
+    transition: transform 0.15s ease;
+}
+#volumeSlider::-webkit-slider-thumb:hover {
+    transform: scale(1.25);
+    background: #bc13fe;
+    border-color: #ffffff;
 }
 #volumeSlider::-moz-range-thumb {
-    width: 14px; height: 14px;
-    background: #bc13fe; border-radius: 50%;
+    width: 14px;
+    height: 14px;
+    background: #ffffff;
+    border: 2px solid #bc13fe;
+    border-radius: 50%;
     cursor: pointer;
-    border: none;
+    box-shadow: 0 0 10px rgba(188,19,254,0.9);
 }
 
 /* Settings */
@@ -460,14 +482,12 @@ video, iframe {
 <body oncontextmenu="return false">
 
 <div id="player">
-    <!-- LOGO EN LA PARTE SUPERIOR DERECHA -->
     <div class="player-logo">
         <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEil2dds7gIHlc-jR_PV41bR6HiwYzt4n7ciZhiP8KlTlWXXIyZrrYzCYP1UwpK-bLTm6eI4Rpvhvaq3Z-7l5qIyR-BuJnDIi_SjWJ2dWcWS31q7zCws74ta2IAa10-ohsOXV44ts5rekRSCpfjoDAAgJcpXnFo2VXljQ2lswxjM6CkdJI1nGq_cqmuGbBg/s1600/logo300px.png" alt="Logo" referrerpolicy="no-referrer">
     </div>
 
     <div id="overlay"><button id="btn-entrar"><div class="play-icon"></div></button></div>
     
-    <!-- BOTÓN UNIFICADO: CONTEO DE PUBLICIDAD -> SALTAR A LOS 15s -->
     <button id="adBtn" class="ad-counting" style="display: none;"><span id="adText">Publicidad · 21s</span></button>
 
     <div class="video-wrapper" id="wrapper-externo"><div id="bloqueo-flecha"></div><iframe id="videoFrame" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe></div>
@@ -592,6 +612,7 @@ var menuPage = 'main';
 var playbackRate = 1;
 var SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 var externalAudioEl = null;
+var lastNonZeroVolume = 1;
 
 // ===== Tipo de contenido =====
 function tipo(u) {
@@ -646,25 +667,62 @@ video.onpause = function() {
     playBtn.classList.add("paused-frame");
 };
 
-// ===== Mute =====
-muteBtn.onclick = function() {
-    if (externalAudioEl) {
-        externalAudioEl.muted = !externalAudioEl.muted;
-        video.muted = externalAudioEl.muted;
-        muteBtn.innerText = externalAudioEl.muted ? "🔇" : "🔊";
+// ===== Sincronización Visual de Volumen =====
+function syncVolumeVisuals(vol, isMuted) {
+    if (volumeSlider) {
+        volumeSlider.value = isMuted ? '0' : String(vol);
+        var percent = isMuted ? 0 : Math.round(vol * 100);
+        volumeSlider.style.background = 'linear-gradient(to right, #bc13fe ' + percent + '%, rgba(255,255,255,0.2) ' + percent + '%)';
+    }
+    if (muteBtn) {
+        if (isMuted || vol === 0) {
+            muteBtn.innerText = "🔇";
+        } else if (vol < 0.4) {
+            muteBtn.innerText = "🔈";
+        } else if (vol < 0.8) {
+            muteBtn.innerText = "🔉";
+        } else {
+            muteBtn.innerText = "🔊";
+        }
+    }
+}
+
+// ===== Mute / Unmute inteligente =====
+muteBtn.onclick = function(e) {
+    e.stopPropagation();
+    var currentlyMuted = externalAudioEl ? externalAudioEl.muted : video.muted;
+    var newMutedState = !currentlyMuted;
+
+    if (newMutedState) {
+        if (video.volume > 0) lastNonZeroVolume = video.volume;
+        video.muted = true;
+        if (externalAudioEl) externalAudioEl.muted = true;
+        syncVolumeVisuals(video.volume, true);
+        showToast('🔇 Silenciado');
     } else {
-        video.muted = !video.muted;
-        muteBtn.innerText = video.muted ? "🔇" : "🔊";
+        var restoreVol = lastNonZeroVolume > 0 ? lastNonZeroVolume : 0.7;
+        video.muted = false;
+        video.volume = restoreVol;
+        if (externalAudioEl) {
+            externalAudioEl.muted = false;
+            externalAudioEl.volume = restoreVol;
+        }
+        syncVolumeVisuals(restoreVol, false);
+        showToast('🔊 Volumen: ' + Math.round(restoreVol * 100) + '%');
     }
 };
 
-// ===== Volume =====
+// ===== Volume Slider Progresivo =====
 volumeSlider.oninput = function(e) {
-    var v = parseFloat(e.target.value);
+    var v = Math.min(1, Math.max(0, parseFloat(e.target.value)));
     video.volume = v;
     video.muted = (v === 0);
-    if (externalAudioEl) { externalAudioEl.volume = v; externalAudioEl.muted = (v === 0); }
-    muteBtn.innerText = (v === 0) ? "🔇" : "🔊";
+    if (v > 0) lastNonZeroVolume = v;
+    if (externalAudioEl) {
+        externalAudioEl.volume = v;
+        externalAudioEl.muted = (v === 0);
+    }
+    syncVolumeVisuals(v, v === 0);
 };
 
 // ===== Fullscreen =====
@@ -753,9 +811,8 @@ function loadExternalAudio(url) {
     externalAudioEl.playbackRate = video.playbackRate;
     externalAudioEl.currentTime = video.currentTime;
     
-    // Silenciar video original, sincronizar audio externo
     video.muted = true;
-    muteBtn.innerText = externalAudioEl.muted ? '🔇' : '🔊';
+    syncVolumeVisuals(externalAudioEl.volume, externalAudioEl.muted);
 
     var onPlay = function() {
         if (externalAudioEl) {
@@ -811,26 +868,6 @@ function loadExternalAudio(url) {
         video.removeEventListener('playing', onPlaying);
     };
 
-    volumeSlider.oninput = function(e) {
-        var v = parseFloat(e.target.value);
-        if (externalAudioEl) {
-            externalAudioEl.volume = v;
-            externalAudioEl.muted = (v === 0);
-        }
-        muteBtn.innerText = (v === 0) ? '🔇' : '🔊';
-    };
-
-    muteBtn.onclick = function() {
-        if (externalAudioEl) {
-            externalAudioEl.muted = !externalAudioEl.muted;
-            video.muted = true;
-            muteBtn.innerText = externalAudioEl.muted ? '🔇' : '🔊';
-            if (volumeSlider) {
-                volumeSlider.value = externalAudioEl.muted ? '0' : String(externalAudioEl.volume);
-            }
-        }
-    };
-
     if (!video.paused) {
         externalAudioEl.play().catch(function() {});
     }
@@ -840,7 +877,6 @@ function loadExternalAudio(url) {
 function detectAudioTracks() {
     availableAudio = [];
     
-    // HLS.js audio tracks
     if (hlsPlayer && hlsPlayer.audioTracks && hlsPlayer.audioTracks.length > 0) {
         hlsPlayer.audioTracks.forEach(function(track, i) {
             availableAudio.push({
@@ -852,7 +888,6 @@ function detectAudioTracks() {
         });
         if (currentAudioIdx === -1) currentAudioIdx = hlsPlayer.audioTrack;
     }
-    // DASH audio tracks
     else if (dashPlayer) {
         try {
             var tracks = dashPlayer.getTracksFor('audio');
@@ -871,7 +906,6 @@ function detectAudioTracks() {
         } catch(e) {}
     }
     else {
-        // MP4 / MKV / WebM: Pista base original
         availableAudio.push({
             label: '🔊 Audio original (Video)',
             lang: 'original',
@@ -879,7 +913,6 @@ function detectAudioTracks() {
         });
         if (currentAudioIdx === -1) currentAudioIdx = 0;
 
-        // Detección nativa si el navegador la soporta (Safari / iOS)
         var nativeAudio = video.audioTracks;
         if (nativeAudio && nativeAudio.length > 0) {
             for (var i = 0; i < nativeAudio.length; i++) {
@@ -894,7 +927,6 @@ function detectAudioTracks() {
         }
     }
     
-    // Audios de URL (?audios=... o ?audio=...)
     parsedAudios.forEach(function(pa) {
         var already = availableAudio.some(function(a) { return a.url === pa.url; });
         if (!already) {
@@ -922,20 +954,7 @@ function setAudioTrack(idx) {
             externalAudioEl = null;
         }
         video.muted = false;
-        muteBtn.innerText = video.muted ? '🔇' : '🔊';
-        if (volumeSlider) volumeSlider.value = String(video.volume);
-
-        volumeSlider.oninput = function(e) {
-            var v = parseFloat(e.target.value);
-            video.volume = v;
-            video.muted = (v === 0);
-            muteBtn.innerText = (v === 0) ? '🔇' : '🔊';
-        };
-        muteBtn.onclick = function() {
-            video.muted = !video.muted;
-            muteBtn.innerText = video.muted ? '🔇' : '🔊';
-            if (volumeSlider) volumeSlider.value = video.muted ? '0' : String(video.volume);
-        };
+        syncVolumeVisuals(video.volume, false);
         showToast('🔊 Audio original restaurado');
     } else if (track.type === 'hls' && hlsPlayer) {
         hlsPlayer.audioTrack = track.index;
@@ -980,7 +999,6 @@ function updateLangBadge() {
 function detectSubtitleTracks() {
     availableSubs = [];
     
-    // HLS.js subtitle tracks
     if (hlsPlayer && hlsPlayer.subtitleTracks && hlsPlayer.subtitleTracks.length > 0) {
         hlsPlayer.subtitleTracks.forEach(function(track, i) {
             availableSubs.push({
@@ -991,7 +1009,6 @@ function detectSubtitleTracks() {
             });
         });
     }
-    // DASH text tracks
     else if (dashPlayer) {
         try {
             var tracks = dashPlayer.getTracksFor('text');
@@ -1009,7 +1026,6 @@ function detectSubtitleTracks() {
         } catch(e) {}
     }
     
-    // HTML5 textTracks
     if (video.textTracks && video.textTracks.length > 0) {
         for (var i = 0; i < video.textTracks.length; i++) {
             var t = video.textTracks[i];
@@ -1027,7 +1043,6 @@ function detectSubtitleTracks() {
         }
     }
     
-    // Subtítulos de URL (?subtitles=... o ?subtitle=...)
     parsedSubs.forEach(function(ps) {
         var already = availableSubs.some(function(s) { return s.url === ps.url; });
         if (!already) {
@@ -1439,8 +1454,26 @@ document.addEventListener('keydown', function(e) {
         case 'm': e.preventDefault(); muteBtn.click(); break;
         case 'ArrowLeft': e.preventDefault(); video.currentTime = Math.max(0, video.currentTime - 10); showToast('⏪ -10s'); break;
         case 'ArrowRight': e.preventDefault(); video.currentTime = Math.min(video.duration || 0, video.currentTime + 10); showToast('⏩ +10s'); break;
-        case 'ArrowUp': e.preventDefault(); video.volume = Math.min(1, video.volume + 0.1); volumeSlider.value = video.volume; showToast('🔊 ' + Math.round(video.volume*100) + '%'); break;
-        case 'ArrowDown': e.preventDefault(); video.volume = Math.max(0, video.volume - 0.1); volumeSlider.value = video.volume; showToast('🔊 ' + Math.round(video.volume*100) + '%'); break;
+        case 'ArrowUp': 
+            e.preventDefault(); 
+            var newUp = Math.min(1, Math.round((video.volume + 0.05) * 100) / 100);
+            video.volume = newUp;
+            video.muted = false;
+            lastNonZeroVolume = newUp;
+            if (externalAudioEl) { externalAudioEl.volume = newUp; externalAudioEl.muted = false; }
+            syncVolumeVisuals(newUp, false);
+            showToast('🔊 ' + Math.round(newUp * 100) + '%'); 
+            break;
+        case 'ArrowDown': 
+            e.preventDefault(); 
+            var newDown = Math.max(0, Math.round((video.volume - 0.05) * 100) / 100);
+            video.volume = newDown;
+            video.muted = (newDown === 0);
+            if (newDown > 0) lastNonZeroVolume = newDown;
+            if (externalAudioEl) { externalAudioEl.volume = newDown; externalAudioEl.muted = (newDown === 0); }
+            syncVolumeVisuals(newDown, newDown === 0);
+            showToast(newDown === 0 ? '🔇 Silenciado' : '🔊 ' + Math.round(newDown * 100) + '%'); 
+            break;
         case 'c': e.preventDefault(); setSubtitleTrack(currentSubIdx >= 0 ? -1 : (availableSubs.length > 0 ? 0 : -1)); break;
         case 'a': e.preventDefault(); if (availableAudio.length > 1) { setAudioTrack((currentAudioIdx + 1) % availableAudio.length); } break;
         case 'p': e.preventDefault(); pipBtn.click(); break;
@@ -1602,13 +1635,10 @@ document.getElementById('btn-entrar').onclick = function() {
         var countdown = setInterval(function() {
             timeLeft--;
             
-            // De 21 a 16 muestra la cuenta regresiva informativa
             if (timeLeft > 15) {
                 adBtn.className = 'ad-counting';
                 adText.textContent = 'Publicidad · ' + timeLeft + 's';
-            } 
-            // Al llegar a 15 se convierte en botón activo para saltar
-            else {
+            } else {
                 adBtn.className = 'ad-skippable';
                 adText.innerHTML = 'Saltar Anuncio ⏭';
             }
@@ -1632,7 +1662,8 @@ document.getElementById('btn-entrar').onclick = function() {
     }
 };
 
-if (video.muted) muteBtn.innerText = "🔇";
+// Sincronizar estado inicial de volumen
+syncVolumeVisuals(video.volume, video.muted);
 </script>
 </body>
 </html>
