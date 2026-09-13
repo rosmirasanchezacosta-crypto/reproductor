@@ -479,16 +479,16 @@ video, iframe {
 }
 .speed-btn:hover { color: #bc13fe; background: rgba(188,19,254,0.1); }
 
-/* Logo en la parte superior derecha */
+/* Logo en la parte superior izquierda */
 .player-logo {
     position: absolute;
     top: 18px;
-    right: 20px;
+    left: 20px;
     z-index: 60;
     pointer-events: none;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
     user-select: none;
 }
 .player-logo img {
@@ -498,11 +498,60 @@ video, iframe {
     filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.85));
 }
 
+/* ============================================================
+   RESPONSIVE MÓVIL — paneles compactos acordes a la pantalla
+   ============================================================ */
 @media(max-width:600px){
-    .btn { font-size: 18px; min-width: 40px; height: 40px; }
-    .settings-menu { min-width: 210px; font-size: 12px; }
-    .player-logo { top: 12px; right: 12px; }
+    .btn { font-size: 16px; min-width: 36px; height: 36px; margin-right: 8px; }
+    .speed-btn { font-size: 11px; padding: 3px 6px; margin-right: 8px; }
+    .controls { padding: 10px 10px 12px; }
+    .progress { margin-bottom: 8px; }
+
+    /* Menú de configuración: se adapta al ancho de pantalla sin desbordar */
+    .settings-menu {
+        min-width: 0;
+        width: calc(100vw - 24px);
+        max-width: 280px;
+        font-size: 12px;
+        right: 0;
+        left: auto;
+        max-height: 55vh;
+    }
+    .settings-header { padding: 10px 14px; font-size: 13px; gap: 6px; }
+    .settings-item { padding: 9px 14px; }
+    .settings-item .s-label { font-size: 12px; }
+    .settings-item .s-value { font-size: 11px; margin-left: 8px; }
+    .settings-item .s-check { font-size: 13px; }
+
+    /* Cápsula de volumen más compacta */
+    .volume-slider-wrapper { width: 32px; height: 100px; padding: 8px 0; }
+    #volumeSlider { height: 80px; }
+    .volume-container { margin-right: 8px; }
+
+    /* Botón de anuncio más pequeño */
+    #adBtn { bottom: 70px; right: 12px; padding: 9px 16px; font-size: 12px; }
+
+    /* Toast y play central compactos */
+    .toast-msg { font-size: 13px; padding: 10px 18px; }
+    .center-play { width: 64px; height: 64px; }
+    .center-play::before { border-left: 20px solid white; border-top: 12px solid transparent; border-bottom: 12px solid transparent; }
+
+    /* Logo */
+    .player-logo { top: 12px; left: 12px; }
     .player-logo img { height: 34px; max-width: 120px; }
+}
+
+@media(max-width:380px){
+    .btn { min-width: 32px; height: 32px; font-size: 14px; margin-right: 6px; }
+    .speed-btn { font-size: 10px; padding: 2px 5px; margin-right: 6px; }
+    .settings-menu { width: calc(100vw - 20px); max-width: 240px; }
+    .settings-item { padding: 8px 12px; }
+    .player-logo img { height: 28px; max-width: 100px; }
+    .volume-slider-wrapper { width: 28px; height: 90px; }
+    #volumeSlider { height: 70px; }
+    #adBtn { padding: 8px 13px; font-size: 11px; bottom: 64px; right: 10px; }
+    .center-play { width: 56px; height: 56px; }
+    .toast-msg { font-size: 12px; padding: 9px 14px; }
 }
 </style>
 </head>
